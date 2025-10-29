@@ -13,6 +13,18 @@ enum Quant
 	RUBICHART_QUANT_128 = 128,
 }
 
+static var quants : Array[Quant] = [
+	RubiChart.Quant.RUBICHART_QUANT_4,
+	RubiChart.Quant.RUBICHART_QUANT_8,
+	RubiChart.Quant.RUBICHART_QUANT_12,
+	RubiChart.Quant.RUBICHART_QUANT_16,
+	RubiChart.Quant.RUBICHART_QUANT_24,
+	RubiChart.Quant.RUBICHART_QUANT_32,
+	RubiChart.Quant.RUBICHART_QUANT_48,
+	RubiChart.Quant.RUBICHART_QUANT_64,
+	RubiChart.Quant.RUBICHART_QUANT_128
+]
+
 @export var scroll_multiplier : float = 1.0
 @export var sections : Array[RubiChartSection]
 @export var scroll_velocities : Array[RubiChartScrollVelocity]
