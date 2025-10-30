@@ -167,7 +167,7 @@ static func section_remove_row(section : RubiChartSection, row : RubiChartRow) -
 	section.rows.remove_at(section.rows.find(row))
 	sort_rows(section.rows)
 
-static func remove_row_at(section : RubiChartSection, offset : int, quant : RubiChart.Quant) -> void:
+static func section_remove_row_at(section : RubiChartSection, offset : int, quant : RubiChart.Quant) -> void:
 	var row : RubiChartRow = section_get_row(section, offset, quant)
 	if row == null:
 		return
