@@ -17,49 +17,49 @@ static func factor_offset_and_quant(values : Array) -> void:
 		break
 
 static func add_note_start(chart : RubiChart, note : RubiChartNote, measure : int, offset : int, quant : RubiChart.Quant) -> void:
-	var section : RubiChartSection = add_section(chart, measure)
-	var row : RubiChartRow = add_row(section, offset, quant)
-	add_start_note(row, note)
+	var section : RubiChartSection = chart_add_section(chart, measure)
+	var row : RubiChartRow = section_add_row(section, offset, quant)
+	row_add_start_note(row, note)
 	
 	note.starting_row = row
 
 static func add_note_end(chart : RubiChart, note : RubiChartNote, measure : int, offset : int, quant : RubiChart.Quant) -> void:
-	var section : RubiChartSection = add_section(chart, measure)
-	var row : RubiChartRow = add_row(section, offset, quant)
-	add_end_note(row, note)
+	var section : RubiChartSection = chart_add_section(chart, measure)
+	var row : RubiChartRow = section_add_row(section, offset, quant)
+	row_add_end_note(row, note)
 	
 	note.ending_row = row
 
-static func remove_note_start(chart : RubiChart, note : RubiChartNote) -> void:
+static func chart_remove_note_start(chart : RubiChart, note : RubiChartNote) -> void:
 	var starting_row : RubiChartRow = note.starting_row
 	var ending_row : RubiChartRow = note.ending_row
 	
-	remove_note(starting_row, note)
+	row_remove_note(starting_row, note)
 	
 	if ending_row == null:
-		remove_note_end(chart, note)
+		chart_remove_note_end(chart, note)
 	else:
 		cleanup_chart(chart)
 
-static func remove_note_end(chart : RubiChart, note : RubiChartNote) -> void:
+static func chart_remove_note_end(chart : RubiChart, note : RubiChartNote) -> void:
 	var ending_row : RubiChartRow = note.ending_row
 	
-	remove_note(ending_row, note)
+	row_remove_note(ending_row, note)
 	cleanup_chart(chart)
 
-static func move_note_start(chart : RubiChart, note : RubiChartNote, measure : int, offset : int, quant : RubiChart.Quant) -> void:
+static func chart_move_note_start(chart : RubiChart, note : RubiChartNote, measure : int, offset : int, quant : RubiChart.Quant) -> void:
 	var ending_row : RubiChartRow = note.ending_row
-	remove_note_start(chart, note)
+	chart_remove_note_start(chart, note)
 	add_note_start(chart, note, measure, offset, quant)
 	
 	if ending_row != null:
 		add_note_end(chart, note, ending_row.section.measure, ending_row.offset, ending_row.quant)
 
-static func move_note_end(chart : RubiChart, note : RubiChartNote, measure : int, offset : int, quant : RubiChart.Quant) -> void:
-	remove_note_end(chart, note)
+static func chart_move_note_end(chart : RubiChart, note : RubiChartNote, measure : int, offset : int, quant : RubiChart.Quant) -> void:
+	chart_remove_note_end(chart, note)
 	add_note_end(chart, note, measure, offset, quant)
 
-static func move_note(chart : RubiChart, note : RubiChartNote, measure : int, offset : int, quant : RubiChart.Quant) -> void:
+static func chart_move_note(chart : RubiChart, note : RubiChartNote, measure : int, offset : int, quant : RubiChart.Quant) -> void:
 	var distance : int = 0
 	var distance_quant : RubiChart.Quant = RubiChart.Quant.RUBICHART_QUANT_4
 	var is_hold : bool = note.ending_row != null
@@ -101,7 +101,7 @@ static func move_note(chart : RubiChart, note : RubiChartNote, measure : int, of
 	
 	add_note_end(chart, note, ending_measure, end_offset, ending_quant)
 
-static func add_section(chart : RubiChart, measure : int) -> RubiChartSection:
+static func chart_add_section(chart : RubiChart, measure : int) -> RubiChartSection:
 	var section : RubiChartSection = get_section_at_measure(chart.sections, measure)
 	if section != null:
 		return section
@@ -113,16 +113,16 @@ static func add_section(chart : RubiChart, measure : int) -> RubiChartSection:
 	sort_sections_by_measure(chart.sections)
 	return section
 
-static func remove_section(chart : RubiChart, section : RubiChartSection) -> void:
+static func chart_remove_section(chart : RubiChart, section : RubiChartSection) -> void:
 	chart.sections.remove_at(chart.sections.find(section))
 	sort_sections_by_measure(chart.sections)
 
-static func remove_section_at(chart : RubiChart, measure : int) -> void:
+static func chart_remove_section_at(chart : RubiChart, measure : int) -> void:
 	var section : RubiChartSection = get_section_at_measure(chart.sections, measure)
 	if section == null:
 		return
 	
-	remove_section(chart, section)
+	chart_remove_section(chart, section)
 
 static func get_section_at_measure(sections : Array[RubiChartSection], measure : int) -> RubiChartSection:
 	return sections.filter(section_is_at_measure.bind(measure)).front()
@@ -132,7 +132,7 @@ static func section_is_at_measure(section : RubiChartSection, measure : int) -> 
 
 static func cleanup_chart(chart : RubiChart) -> void:
 	for section in chart.sections:
-		cleanup_rows(section)
+		section_cleanup_rows(section)
 		if not section.rows.is_empty():
 			continue
 		
@@ -146,8 +146,8 @@ static func sort_sections_by_measure(sections : Array[RubiChartSection]) -> void
 static func compare_sections_by_measure(x : RubiChartSection, y : RubiChartSection) -> bool:
 	return x.measure < y.measure
 
-static func add_row(section : RubiChartSection, offset : int, quant : RubiChart.Quant) -> RubiChartRow:
-	var row : RubiChartRow = get_row(section, offset, quant)
+static func section_add_row(section : RubiChartSection, offset : int, quant : RubiChart.Quant) -> RubiChartRow:
+	var row : RubiChartRow = section_get_row(section, offset, quant)
 	if row != null:
 		return row
 	
@@ -163,18 +163,18 @@ static func add_row(section : RubiChartSection, offset : int, quant : RubiChart.
 	
 	return row
 
-static func remove_row(section : RubiChartSection, row : RubiChartRow) -> void:
+static func section_remove_row(section : RubiChartSection, row : RubiChartRow) -> void:
 	section.rows.remove_at(section.rows.find(row))
 	sort_rows(section.rows)
 
 static func remove_row_at(section : RubiChartSection, offset : int, quant : RubiChart.Quant) -> void:
-	var row : RubiChartRow = get_row(section, offset, quant)
+	var row : RubiChartRow = section_get_row(section, offset, quant)
 	if row == null:
 		return
 	
-	remove_row(section, row)
+	section_remove_row(section, row)
 
-static func cleanup_rows(section : RubiChartSection) -> void:
+static func section_cleanup_rows(section : RubiChartSection) -> void:
 	for row in section.rows:
 		if not row.starts.is_empty() or not row.ends.is_empty():
 			continue
@@ -183,12 +183,12 @@ static func cleanup_rows(section : RubiChartSection) -> void:
 	
 	sort_rows(section.rows)
 
-static func get_row(section : RubiChartSection, offset : int, quant : RubiChart.Quant) -> RubiChartRow:
+static func section_get_row(section : RubiChartSection, offset : int, quant : RubiChart.Quant) -> RubiChartRow:
 	var values : Array = [offset, quant]
 	factor_offset_and_quant(values)
 	return section.rows.filter(row_matches_value.bind(values[0], values[1])).front()
 
-static func has_row(section : RubiChartSection, offset : int, quant : RubiChart.Quant) -> bool:
+static func section_has_row(section : RubiChartSection, offset : int, quant : RubiChart.Quant) -> bool:
 	var values : Array = [offset, quant]
 	factor_offset_and_quant(values)
 	return section.rows.any(row_matches_value.bind(values[0], values[1]))
@@ -202,27 +202,27 @@ static func sort_rows(rows : Array[RubiChartRow]) -> void:
 static func compare_rows(x : RubiChartRow, y : RubiChartRow) -> bool:
 	return (float(x.offset) / float(x.quant)) < (float(y.offset) / float(y.quant))
 
-static func add_start_note(row : RubiChartRow, note : RubiChartNote) -> void:
+static func row_add_start_note(row : RubiChartRow, note : RubiChartNote) -> void:
 	if row.has_note_with_id(note.id):
 		return
 	
 	row.starts.append(note)
 
-static func add_end_note(row : RubiChartRow, note : RubiChartNote) -> void:
+static func row_add_end_note(row : RubiChartRow, note : RubiChartNote) -> void:
 	if row.has_note_with_id(note.id):
 		return
 	
 	row.ends.append(note)
 
-static func remove_note(row : RubiChartRow, note : RubiChartNote) -> void:
+static func row_remove_note(row : RubiChartRow, note : RubiChartNote) -> void:
 	if row.starts.has(note):
 		row.starts.remove_at(row.starts.find(note))
 	
 	if row.ends.has(note):
 		row.ends.remove_at(row.ends.has(note))
 
-static func remove_note_with_id(row : RubiChartRow, id : String) -> void:
+static func row_remove_note_with_id(row : RubiChartRow, id : String) -> void:
 	var note : RubiChartNote = row.get_note_with_id(id, true)
 	
 	if note != null:
-		remove_note(row, note)
+		row_remove_note(row, note)
