@@ -16,14 +16,14 @@ static func factor_offset_and_quant(values : Array) -> void:
 		values[1] = cur_quant
 		break
 
-static func add_note_start(chart : RubiChart, note : RubiChartNote, measure : int, offset : int, quant : RubiChart.Quant) -> void:
+static func chart_add_note_start(chart : RubiChart, note : RubiChartNote, measure : int, offset : int, quant : RubiChart.Quant) -> void:
 	var section : RubiChartSection = chart_add_section(chart, measure)
 	var row : RubiChartRow = section_add_row(section, offset, quant)
 	row_add_start_note(row, note)
 	
 	note.starting_row = row
 
-static func add_note_end(chart : RubiChart, note : RubiChartNote, measure : int, offset : int, quant : RubiChart.Quant) -> void:
+static func chart_add_note_end(chart : RubiChart, note : RubiChartNote, measure : int, offset : int, quant : RubiChart.Quant) -> void:
 	var section : RubiChartSection = chart_add_section(chart, measure)
 	var row : RubiChartRow = section_add_row(section, offset, quant)
 	row_add_end_note(row, note)
@@ -50,14 +50,14 @@ static func chart_remove_note_end(chart : RubiChart, note : RubiChartNote) -> vo
 static func chart_move_note_start(chart : RubiChart, note : RubiChartNote, measure : int, offset : int, quant : RubiChart.Quant) -> void:
 	var ending_row : RubiChartRow = note.ending_row
 	chart_remove_note_start(chart, note)
-	add_note_start(chart, note, measure, offset, quant)
+	chart_add_note_start(chart, note, measure, offset, quant)
 	
 	if ending_row != null:
-		add_note_end(chart, note, ending_row.section.measure, ending_row.offset, ending_row.quant)
+		chart_add_note_end(chart, note, ending_row.section.measure, ending_row.offset, ending_row.quant)
 
 static func chart_move_note_end(chart : RubiChart, note : RubiChartNote, measure : int, offset : int, quant : RubiChart.Quant) -> void:
 	chart_remove_note_end(chart, note)
-	add_note_end(chart, note, measure, offset, quant)
+	chart_add_note_end(chart, note, measure, offset, quant)
 
 static func chart_move_note(chart : RubiChart, note : RubiChartNote, measure : int, offset : int, quant : RubiChart.Quant) -> void:
 	var distance : int = 0
@@ -80,8 +80,8 @@ static func chart_move_note(chart : RubiChart, note : RubiChartNote, measure : i
 		
 		distance = (measure_distance * distance_quant) + ending_offset - starting_offset
 	
-	remove_note_start(chart, note)
-	add_note_start(chart, note, measure, offset, quant)
+	chart_remove_note_start(chart, note)
+	chart_add_note_start(chart, note, measure, offset, quant)
 	if not is_hold:
 		return
 	
@@ -99,7 +99,7 @@ static func chart_move_note(chart : RubiChart, note : RubiChartNote, measure : i
 	var ending_measure : int = total_distance / ending_quant
 	var end_offset : int = total_distance % ending_quant
 	
-	add_note_end(chart, note, ending_measure, end_offset, ending_quant)
+	chart_add_note_end(chart, note, ending_measure, end_offset, ending_quant)
 
 static func chart_add_section(chart : RubiChart, measure : int) -> RubiChartSection:
 	var section : RubiChartSection = get_section_at_measure(chart.sections, measure)
