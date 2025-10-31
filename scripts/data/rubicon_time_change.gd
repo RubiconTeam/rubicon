@@ -90,7 +90,7 @@ static func get_measure_at_step(time_changes : Array[RubiconTimeChange], step : 
 	
 	return 0.0
 
-static func get_beat_at_millisecond_time(time_changes : Array[RubiconTimeChange], millisecond_time : float) -> float:
+static func get_beat_at_millisecond(time_changes : Array[RubiconTimeChange], millisecond_time : float) -> float:
 	return get_beat_at_measure(time_changes, get_measure_at_millisecond(time_changes, millisecond_time))
 
 static func get_beat_at_measure(time_changes : Array[RubiconTimeChange], measure : float) -> float:
