@@ -28,7 +28,7 @@ static var quants : Array[Quant] = [
 
 @export var scroll_multiplier : float = 1.0
 @export var sections : Array[RubiChartSection]
-@export var scroll_velocities : Array[RubiChartScrollVelocity]
+@export var scroll_velocities : Array[RubiChartScrollVelocity] = [RubiChartScrollVelocity.new()]
 
 func initialize(time_changes : Array[RubiconTimeChange]) -> void:
 	for section in sections:
