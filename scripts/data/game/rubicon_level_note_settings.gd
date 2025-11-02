@@ -1,8 +1,6 @@
 @tool
 class_name RubiconLevelNoteSettings extends Resource
 
-@export_range(0, 100, 1.0, "or_greater") var starting_health : int = 50
-
 @export_group("Judgments", "judgment_")
 @export_flags("Perfect", "Great", "Good", "Okay", "Bad") var judgment_enabled : int:
 	get:
