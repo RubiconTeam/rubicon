@@ -1,3 +1,4 @@
+@tool
 class_name RubiChartRow extends Resource
 
 @export var offset : int
@@ -26,11 +27,24 @@ var _millisecond_time : float
 
 func initaliize(time_changes : Array[RubiconTimeChange]) -> void:
 	_millisecond_time = RubiconTimeChange.get_millisecond_at_measure(time_changes, measure_time)
+	
+	for start in starts:
+		start.starting_row = self
+	
+	for end in ends:
+		end.ending_row = self
 
 func get_note_with_id(id : String, include_ends : bool = false) -> RubiChartNote:
-	var note : RubiChartNote = starts.filter(func(x : RubiChartNote) -> bool : return x.id == id).front()
+	var valid_starts : Array[RubiChartNote] = starts.filter(func(x : RubiChartNote) -> bool: return x.id == id)
+	var note : RubiChartNote = null
+	if not valid_starts.is_empty():
+		note = valid_starts.front()
+	
 	if note == null and include_ends:
-		note = ends.filter(func(x : RubiChartNote) -> bool : return x.id == id).front()
+		var valid_ends : Array[RubiChartNote] = ends.filter(func(x : RubiChartNote) -> bool : return x.id == id)
+		
+		if not valid_ends.is_empty():
+			note = valid_ends.front()
 	
 	return note
 

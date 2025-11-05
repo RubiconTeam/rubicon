@@ -1,3 +1,4 @@
+@tool
 class_name RubiChartScrollVelocity extends Resource
 
 @export var measure_time : float

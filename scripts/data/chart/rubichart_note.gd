@@ -1,3 +1,4 @@
+@tool
 class_name RubiChartNote extends Resource
 
 @export var id : String
@@ -19,3 +20,15 @@ func get_millisecond_end_position() -> float:
 		return ending_row.millisecond_time
 	
 	return get_millisecond_start_position()
+
+func get_graphical_start_position() -> float:
+	return RubiChartScrollVelocity.get_graphic_position_at_millisecond(chart.scroll_velocities, get_millisecond_start_position())
+
+func get_graphical_end_position() -> float:
+	return RubiChartScrollVelocity.get_graphic_position_at_millisecond(chart.scroll_velocities, get_millisecond_end_position())
+
+func get_graphical_start_position_relative(time : float) -> float:
+	return get_graphical_start_position() - RubiChartScrollVelocity.get_graphic_position_at_millisecond(chart.scroll_velocities, time)
+
+func get_graphical_end_position_relative(time : float) -> float:
+	return get_graphical_end_position() - RubiChartScrollVelocity.get_graphic_position_at_millisecond(chart.scroll_velocities, time)

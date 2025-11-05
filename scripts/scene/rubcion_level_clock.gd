@@ -6,15 +6,17 @@ class_name RubiconLevelClock extends Node
 @export_group("Time", "time_")
 @export var time_milliseconds : float:
 	get:
-		if _animation_player == null or _animation_player.assigned_animation.is_empty():
+		var is_on_animation : bool = animation_player != null and (not animation_player.assigned_animation.is_empty() or animation_player.is_playing())
+		if not is_on_animation:
 			return 0
 		
-		return _animation_player.current_animation_position + offset
+		return (_animation_player.current_animation_position + offset) * 1000.0
 	set(val):
-		if _animation_player == null or _animation_player.assigned_animation.is_empty():
+		var is_on_animation : bool = animation_player != null and (not animation_player.assigned_animation.is_empty() or animation_player.is_playing())
+		if not is_on_animation:
 			return
 		
-		_animation_player.seek(val - offset)
+		_animation_player.seek(val - offset, true)
 
 @export var time_measure : float:
 	get:
@@ -33,10 +35,6 @@ class_name RubiconLevelClock extends Node
 		return RubiconTimeChange.get_step_at_millisecond(get_time_changes(), time_milliseconds * 1000.0)
 	set(val):
 		time_milliseconds = RubiconTimeChange.get_step_at_millisecond(get_time_changes(), val)
-
-var time_precise : float:
-	get:
-		return _current_frame_time + (Time.get_unix_time_from_system() - _relative_time_offset)
 
 var level_2d : RubiconLevel2D:
 	get:
@@ -57,6 +55,9 @@ var _animation_player : AnimationPlayer
 var _current_frame_time : float
 var _relative_time_offset : float
 
+func get_time_precise() -> float:
+	return _current_frame_time + (Time.get_unix_time_from_system() - _relative_time_offset)
+
 func get_time_changes() -> Array[RubiconTimeChange]:
 	if _level_2d != null and _level_2d.metadata != null:
 		return _level_2d.metadata.time_changes
@@ -65,6 +66,10 @@ func get_time_changes() -> Array[RubiconTimeChange]:
 		return _level_3d.metadata.time_changes
 	
 	return []
+
+func _validate_property(property: Dictionary) -> void:
+	if property.name.begins_with("time_"):
+		property.usage = PROPERTY_USAGE_EDITOR
 
 func _process(delta: float) -> void:
 	_current_frame_time = time_milliseconds

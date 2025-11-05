@@ -1,6 +1,11 @@
 @tool
 class_name RubiChart extends Resource
 
+const VERSION_MAJOR : int = 2
+const VERSION_MINOR : int = 0
+const VERSION_PATCH : int = 0
+const VERSION_BUILD : int = 0
+
 enum Quant
 {
 	RUBICHART_QUANT_4 = 4,

@@ -1,9 +1,22 @@
 @tool
 class_name RubiconLevel2D extends Node2D
 
-@export var metadata : RubiconLevelMetadata
+@export var metadata : RubiconLevelMetadata:
+	get:
+		return _metadata
+	set(val):
+		_metadata = val
+		
+		if _metadata != null:
+			RubiconTimeChange.update(_metadata.time_changes)
+		
+		metadata_changed.emit()
 
 var clock : RubiconLevelClock
+
+var _metadata : RubiconLevelMetadata
+
+signal metadata_changed
 
 func _get_configuration_warnings() -> PackedStringArray:
 	var warnings : PackedStringArray

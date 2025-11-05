@@ -125,7 +125,8 @@ static func chart_remove_section_at(chart : RubiChart, measure : int) -> void:
 	chart_remove_section(chart, section)
 
 static func get_section_at_measure(sections : Array[RubiChartSection], measure : int) -> RubiChartSection:
-	return sections.filter(section_is_at_measure.bind(measure)).front()
+	var matching_section : Array[RubiChartSection] = sections.filter(section_is_at_measure.bind(measure))
+	return null if matching_section.is_empty() else matching_section.front()
 
 static func section_is_at_measure(section : RubiChartSection, measure : int) -> bool:
 	return section.measure == measure
@@ -186,7 +187,9 @@ static func section_cleanup_rows(section : RubiChartSection) -> void:
 static func section_get_row(section : RubiChartSection, offset : int, quant : RubiChart.Quant) -> RubiChartRow:
 	var values : Array = [offset, quant]
 	factor_offset_and_quant(values)
-	return section.rows.filter(row_matches_value.bind(values[0], values[1])).front()
+
+	var matching_rows : Array[RubiChartRow] = section.rows.filter(row_matches_value.bind(values[0], values[1]))
+	return null if matching_rows.is_empty() else matching_rows.front()
 
 static func section_has_row(section : RubiChartSection, offset : int, quant : RubiChart.Quant) -> bool:
 	var values : Array = [offset, quant]

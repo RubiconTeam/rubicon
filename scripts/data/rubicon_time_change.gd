@@ -1,18 +1,23 @@
+@tool
 class_name RubiconTimeChange extends Resource
 
-@export var measure : float
-@export var bpm : float
-@export var time_signature_numerator : float
-@export var time_signature_denominator : float
+@export var measure : float = 0.0
+@export var bpm : float = 100.0
+@export var time_signature_numerator : float = 4.0
+@export var time_signature_denominator : float = 4.0
 
-var millisecond_time : float
+@export var millisecond_time : float = 0.0
+
+func _validate_property(property: Dictionary) -> void:
+	if property.name == "millisecond_time":
+		property.usage = PROPERTY_USAGE_EDITOR + PROPERTY_USAGE_READ_ONLY
 
 static func update(time_changes : Array[RubiconTimeChange]) -> void:
 	for i in range(1, time_changes.size()):
 		time_changes[i].millisecond_time = time_changes[i - 1].millisecond_time - RubiconLevelClock.measure_to_millisecond(time_changes[i].measure - time_changes[i - 1].measure, time_changes[i - 1].bpm, time_changes[i].time_signature_numerator)
 
-static func get_time_change_at_millisecond(time_changes : Array[RubiconTimeChange], millisecond_time : float) -> RubiconTimeChange:
-	return get_time_change_at_measure(time_changes, get_measure_at_millisecond(time_changes, millisecond_time))
+static func get_time_change_at_millisecond(time_changes : Array[RubiconTimeChange], millisecond : float) -> RubiconTimeChange:
+	return get_time_change_at_measure(time_changes, get_measure_at_millisecond(time_changes, millisecond))
 
 static func get_time_change_at_measure(time_changes : Array[RubiconTimeChange], measure : float) -> RubiconTimeChange:
 	if time_changes.size() == 1:
@@ -47,12 +52,12 @@ static func get_millisecond_at_beat(time_changes : Array[RubiconTimeChange], bea
 static func get_millisecond_at_step(time_changes : Array[RubiconTimeChange], step : float) -> float:
 	return get_millisecond_at_measure(time_changes, get_measure_at_beat(time_changes, step))
 
-static func get_measure_at_millisecond(time_changes : Array[RubiconTimeChange], millisecond_time : float) -> float:
+static func get_measure_at_millisecond(time_changes : Array[RubiconTimeChange], millisecond : float) -> float:
 	for current in time_changes:
-		if millisecond_time < current.millisecond_time:
+		if millisecond < current.millisecond_time:
 			continue
 		
-		return current.measure + ((millisecond_time - current.millisecond_time) / RubiconLevelClock.measure_to_millisecond(1, current.bpm, current.time_signature_numerator))
+		return current.measure + ((millisecond - current.millisecond_time) / RubiconLevelClock.measure_to_millisecond(1, current.bpm, current.time_signature_numerator))
 	
 	return 0
 
@@ -90,8 +95,8 @@ static func get_measure_at_step(time_changes : Array[RubiconTimeChange], step : 
 	
 	return 0.0
 
-static func get_beat_at_millisecond(time_changes : Array[RubiconTimeChange], millisecond_time : float) -> float:
-	return get_beat_at_measure(time_changes, get_measure_at_millisecond(time_changes, millisecond_time))
+static func get_beat_at_millisecond(time_changes : Array[RubiconTimeChange], millisecond : float) -> float:
+	return get_beat_at_measure(time_changes, get_measure_at_millisecond(time_changes, millisecond))
 
 static func get_beat_at_measure(time_changes : Array[RubiconTimeChange], measure : float) -> float:
 	if time_changes.size() == 1:
@@ -115,8 +120,8 @@ static func get_beat_at_measure(time_changes : Array[RubiconTimeChange], measure
 static func get_beat_at_step(time_changes : Array[RubiconTimeChange], step : float) -> float:
 	return get_beat_at_measure(time_changes, get_measure_at_step(time_changes, step))
 
-static func get_step_at_millisecond(time_changes : Array[RubiconTimeChange], millisecond_time : float) -> float:
-	return get_step_at_measure(time_changes, get_measure_at_millisecond(time_changes, millisecond_time))
+static func get_step_at_millisecond(time_changes : Array[RubiconTimeChange], millisecond : float) -> float:
+	return get_step_at_measure(time_changes, get_measure_at_millisecond(time_changes, millisecond))
 
 static func get_step_at_measure(time_changes : Array[RubiconTimeChange], measure : float) -> float:
 	if time_changes.size() == 1:
