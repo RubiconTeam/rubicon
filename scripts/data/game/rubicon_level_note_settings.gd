@@ -1,15 +1,15 @@
 @tool
 class_name RubiconLevelNoteSettings extends Resource
 
-@export_group("Judgments", "judgment_")
-@export_flags("Perfect", "Great", "Good", "Okay", "Bad") var judgment_enabled : int:
+@export_category("Judgments")
+@export_flags("Perfect:2", "Great:4", "Good:8", "Okay:16", "Bad:32") var judgment_enabled : int:
 	get:
 		return _judgments_enabled
 	set(val):
 		_judgments_enabled = val
 		notify_property_list_changed()
 
-@export_subgroup("Windows", "judgment_window_")
+@export_group("Windows", "judgment_window_")
 @export var judgment_window_perfect : float = 20
 @export var judgment_window_great : float = 45
 @export var judgment_window_good : float = 75

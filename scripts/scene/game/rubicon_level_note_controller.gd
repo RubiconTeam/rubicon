@@ -8,7 +8,12 @@ class_name RubiconLevelNoteController extends Control
 		_chart = val
 		_chart_dirty = true
 
-@export var noteskin : RubiconLevelNoteskin
+@export var note_overrides : RubiconLevelNoteDatabase:
+	get:
+		return _override_note_database
+	set(val):
+		_override_note_database = val
+		_reset_note_database()
 
 @export var autoplay : bool = false
 @export var inputs : RubiconLevelNoteInputMap
@@ -21,8 +26,34 @@ var _chart_dirty : bool = false
 var _level_2d : RubiconLevel2D
 var _level_3d : RubiconLevel3D
 
+var _override_note_database : RubiconLevelNoteDatabase
+var _internal_note_database : Dictionary[StringName, RubiconLevelNoteDatabaseValue]
+
 func _init() -> void:
 	set_process_internal(true)
+
+func _reset_note_database() -> void:
+	_internal_note_database.clear()
+	if _override_note_database != null:
+		for key in _override_note_database.defines:
+			_internal_note_database[key] = _override_note_database.defines[key]
+	
+	var default_database_path : String = ProjectSettings.get_setting("rubicon/defaults/note_database")
+	if default_database_path.is_empty() or not ResourceLoader.exists(default_database_path):
+		return
+	
+	var resource : Resource = ResourceLoader.load(default_database_path)
+	if resource is not RubiconLevelNoteDatabase:
+		update_chart()
+		return
+	
+	for key in resource.defines:
+		if _internal_note_database.has(key):
+			continue
+		
+		_internal_note_database[key] = resource.defines[key]
+	
+	update_chart()
 
 func _notification(what: int) -> void:
 	match what:
@@ -53,6 +84,9 @@ func _notification(what: int) -> void:
 					break
 				
 				parent = parent.get_parent()
+
+func get_note_database() -> Dictionary[StringName, RubiconLevelNoteDatabaseValue]:
+	return _internal_note_database
 
 func update_chart() -> void:
 	var metadata : RubiconLevelMetadata = get_level_metadata()

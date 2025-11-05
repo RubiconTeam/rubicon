@@ -20,8 +20,8 @@ var _note_pool : Dictionary[String, Array]
 func get_controller() -> RubiconLevelNoteController:
 	return _controller
 
-@abstract func get_mode_id() -> String
-@abstract func get_unique_id() -> String
+@abstract func get_mode_id() -> StringName
+@abstract func get_unique_id() -> StringName
 
 func update_notes() -> void:
 	if _controller == null:
@@ -51,8 +51,9 @@ func spawn_note(index : int) -> void:
 	
 	var graphic : RubiconLevelNote = _note_pool[note_type].pop_back()
 	if graphic == null:
-		var skin : RubiconLevelNoteskinValue = get_controller().noteskin.get_skin_for_mode(get_mode_id())
-		var packed : PackedScene = skin.variation_or_default(note_type)
+		var define_key : String = "%s_%s" % [note_type, get_mode_id()] if not note_type.is_empty() else get_mode_id()
+		var skin : RubiconLevelNoteDatabaseValue = get_controller().get_note_database()[define_key]
+		var packed : PackedScene = skin.scene
 		
 		graphic = packed.instantiate()
 	
@@ -73,6 +74,9 @@ func despawn_note(index : int) -> void:
 	
 	graphics[index] = null
 
+func hit_note(index : int) -> void:
+	pass
+
 @abstract func sort_graphic(data_index : int) -> void
 
 func _notification(what: int) -> void:
@@ -90,7 +94,7 @@ func _notification(what: int) -> void:
 				update_notes()
 
 func _should_process() -> bool:
-	return not data.is_empty() and settings != null and _controller != null and _controller.get_level_clock() != null and _controller.noteskin != null
+	return not data.is_empty() and settings != null and _controller != null and _controller.get_level_clock() != null
 
 func _process(delta: float) -> void:
 	if not _should_process():

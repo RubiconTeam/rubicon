@@ -23,6 +23,11 @@ func was_hit() -> bool:
 	
 	return handler.note_hit_index > data_index
 
+func get_hit_result(time_when_hit : float) -> RubiconLevelNoteHitResult:
+	var result : RubiconLevelNoteHitResult = RubiconLevelNoteHitResult.new()
+	
+	return result
+
 func _enter_tree() -> void:
 	pass
 
