@@ -33,16 +33,23 @@ func _notification(what: int) -> void:
 				
 				_chart_dirty = false
 		NOTIFICATION_PARENTED:
-			_level_2d = null
-			_level_3d = null
+			if _level_2d != null:
+				_level_2d.metadata_changed.disconnect(update_chart)
+				_level_2d = null
+			
+			if _level_3d != null:
+				_level_3d.metadata_changed.disconnect(update_chart)
+				_level_3d = null
 			
 			var parent : Node = get_parent()
 			while parent != null:
 				if parent is RubiconLevel2D:
 					_level_2d = parent
+					_level_2d.metadata_changed.connect(update_chart)
 					break
 				elif parent is RubiconLevel3D:
 					_level_3d = parent
+					_level_3d.metadata_changed.connect(update_chart)
 					break
 				
 				parent = parent.get_parent()
@@ -50,7 +57,6 @@ func _notification(what: int) -> void:
 func update_chart() -> void:
 	var metadata : RubiconLevelMetadata = get_level_metadata()
 	if metadata == null:
-		printerr("Your chart was not initialized due to missing metadata!")
 		return
 	
 	_chart.initialize(metadata.time_changes)

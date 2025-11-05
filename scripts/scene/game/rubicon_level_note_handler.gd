@@ -30,6 +30,15 @@ func update_notes() -> void:
 	if _controller.chart == null:
 		return
 	
+	note_spawn_start = 0
+	note_spawn_end = 0
+	note_hit_index = 0
+	for i in data.size():
+		if graphics[i] == null:
+			continue
+		
+		despawn_note(i)
+	
 	data = get_controller().chart.get_notes_of_id(get_unique_id())
 	
 	graphics.clear()
@@ -103,6 +112,9 @@ func _process(delta: float) -> void:
 		note_spawn_end += 1
 	
 	# Handle rewinding
+	while note_hit_index > 0 and data[note_hit_index - 1].get_millisecond_end_position() - millisecond_position > -settings.judgment_window_bad:
+		note_hit_index -= 1
+	
 	while note_spawn_start > 0 and data[note_spawn_start - 1].get_millisecond_end_position() - millisecond_position > spawning_bound_minimum:
 		note_spawn_start -= 1
 		

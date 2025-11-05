@@ -17,6 +17,12 @@ func initialize(handler : RubiconLevelNoteHandler, data_index : int) -> void:
 	self.data_index = data_index
 	is_runtime_note = true
 
+func was_hit() -> bool:
+	if handler == null:
+		return false
+	
+	return handler.note_hit_index > data_index
+
 func _enter_tree() -> void:
 	pass
 
