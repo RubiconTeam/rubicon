@@ -18,15 +18,21 @@ func initialize(handler : RubiconLevelNoteHandler, data_index : int) -> void:
 	is_runtime_note = true
 
 func was_hit() -> bool:
-	if handler == null:
+	var result : RubiconLevelNoteHitResult = get_hit_result()
+	if result == null:
 		return false
 	
-	return handler.note_hit_index > data_index
+	return result.scoring_hit != RubiconLevelNoteHitResult.Hit.HIT_NONE
 
-func get_hit_result(time_when_hit : float) -> RubiconLevelNoteHitResult:
-	var result : RubiconLevelNoteHitResult = RubiconLevelNoteHitResult.new()
+func was_missed() -> bool:
+	var result : RubiconLevelNoteHitResult = get_hit_result()
+	if result == null:
+		return false
 	
-	return result
+	return result.scoring_rating == RubiconLevelNoteHitResult.Judgment.JUDGMENT_MISS
+
+func get_hit_result() -> RubiconLevelNoteHitResult:
+	return _handler.results[data_index] if _handler != null and _handler.note_hit_index > data_index else null
 
 func _enter_tree() -> void:
 	pass

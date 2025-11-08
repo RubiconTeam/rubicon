@@ -63,30 +63,41 @@ enum Judgment {
 	JUDGMENT_GREAT = 1 << 2,
 	JUDGMENT_GOOD = 1 << 3,
 	JUDGMENT_OKAY = 1 << 4,
-	JUDGMENT_BAD = 1 << 5
+	JUDGMENT_BAD = 1 << 5,
+	JUDGMENT_MISS = 1 << 6
 }
 
 enum Hit {
-	HIT_NONE = 1 << 0,
-	HIT_TAP = 1 << 1,
-	HIT_TRAIL = 1 << 2,
-	HIT_TAIL = 1 << 3
+	HIT_NONE = 0,
+	HIT_INCOMPLETE = 1,
+	HIT_COMPLETE = 2
 }
 
 enum ModifierFlags
 {
 	MODIFIER_FLAG_NONE = 1 << 0,
-	MODIFIER_FLAG_HEALTH = 1 << 1,
-	MODIFIER_FLAG_SCORE = 1 << 2,
-	MODIFIER_FLAG_SPLASH = 1 << 3,
-	MODIFIER_FLAG_ANIMATION = 1 << 4,
-	MODIFIER_FLAG_VOCALS = 1 << 5
+	MODIFIER_FLAG_SPLASH = 1 << 1,
+	MODIFIER_FLAG_ANIMATION = 1 << 2,
+	MODIFIER_FLAG_VOCALS = 1 << 3
 }
 
-@export var rating : Judgment = Judgment.JUDGMENT_NONE
 @export var data_index : int = 0
-@export var hit : Hit = Hit.HIT_NONE
+@export var animation : StringName
+@export var flags : ModifierFlags = ModifierFlags.MODIFIER_FLAG_NONE
+
+@export_group("Scoring", "scoring_")
+@export_range(0.0, 1.0) var scoring_value : float = 1.0
+@export var scoring_health_delta : int = 0
+@export var scoring_rating : Judgment = Judgment.JUDGMENT_NONE
+@export var scoring_hit : Hit = Hit.HIT_NONE
 
 @export_group("Time", "time_")
 @export var time_distance : float
 @export var time_when_hit : float
+
+func reset() -> void:
+	flags = ModifierFlags.MODIFIER_FLAG_NONE
+	scoring_health_delta = 0
+	scoring_value = 0.0
+	scoring_rating = Judgment.JUDGMENT_NONE
+	scoring_hit = Hit.HIT_NONE

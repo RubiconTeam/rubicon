@@ -1,4 +1,4 @@
 @tool
 class_name RubiconLevelNoteDatabase extends Resource
 
-@export var defines : Dictionary[StringName, RubiconLevelNoteDatabaseValue]
+@export var defines : Dictionary[StringName, RubiconLevelNoteMetadata]

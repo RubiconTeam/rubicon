@@ -2,7 +2,7 @@
 class_name RubiChartNote extends Resource
 
 @export var id : String
-@export var type : String
+@export var type : StringName
 @export var metadata : Dictionary[String, Variant]
 
 var starting_row : RubiChartRow

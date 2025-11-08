@@ -10,11 +10,11 @@ class_name RubiconLevelNoteSettings extends Resource
 		notify_property_list_changed()
 
 @export_group("Windows", "judgment_window_")
-@export var judgment_window_perfect : float = 20
-@export var judgment_window_great : float = 45
-@export var judgment_window_good : float = 75
-@export var judgment_window_okay : float = 105
-@export var judgment_window_bad : float = 130
+@export_range(0.0, 1.0, 0.01, "or_greater") var judgment_window_perfect : float = 20
+@export_range(0.0, 1.0, 0.01, "or_greater") var judgment_window_great : float = 45
+@export_range(0.0, 1.0, 0.01, "or_greater") var judgment_window_good : float = 75
+@export_range(0.0, 1.0, 0.01, "or_greater") var judgment_window_okay : float = 105
+@export_range(0.0, 1.0, 0.01, "or_greater") var judgment_window_bad : float = 130
 
 var _judgments_enabled : int = 63
 

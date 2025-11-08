@@ -9,19 +9,24 @@
 
 var data : Array[RubiChartNote]
 var graphics : Array[RubiconLevelNote]
+var results : Array[RubiconLevelNoteHitResult]
 
 var note_spawn_start : int = 0
 var note_spawn_end : int = 0
 var note_hit_index : int = 0
 
 var _controller : RubiconLevelNoteController
-var _note_pool : Dictionary[String, Array]
+var _note_pool : Dictionary[StringName, Array]
 
 func get_controller() -> RubiconLevelNoteController:
 	return _controller
 
 @abstract func get_mode_id() -> StringName
 @abstract func get_unique_id() -> StringName
+
+@abstract func sort_graphic(data_index : int) -> void
+
+@abstract func _autoplay_process(millisecond_position : float) -> void
 
 func update_notes() -> void:
 	if _controller == null:
@@ -43,16 +48,19 @@ func update_notes() -> void:
 	
 	graphics.clear()
 	graphics.resize(data.size())
+	
+	results.clear()
+	results.resize(data.size())
 
 func spawn_note(index : int) -> void:
-	var note_type : String = data[index].type
+	var note_type : StringName = data[index].type
 	if not _note_pool.has(note_type):
 		_note_pool[note_type] = Array()
 	
 	var graphic : RubiconLevelNote = _note_pool[note_type].pop_back()
 	if graphic == null:
-		var define_key : String = "%s_%s" % [note_type, get_mode_id()] if not note_type.is_empty() else get_mode_id()
-		var skin : RubiconLevelNoteDatabaseValue = get_controller().get_note_database()[define_key]
+		var define_key : StringName = "%s_%s" % [note_type, get_mode_id()] if not note_type.is_empty() else get_mode_id()
+		var skin : RubiconLevelNoteMetadata = get_controller().get_note_database()[define_key]
 		var packed : PackedScene = skin.scene
 		
 		graphic = packed.instantiate()
@@ -66,7 +74,7 @@ func spawn_note(index : int) -> void:
 	sort_graphic(index)
 
 func despawn_note(index : int) -> void:
-	var note_type : String = data[index].type
+	var note_type : StringName = data[index].type
 	var graphic : RubiconLevelNote = graphics[index]
 	
 	remove_child(graphic)
@@ -74,10 +82,51 @@ func despawn_note(index : int) -> void:
 	
 	graphics[index] = null
 
-func hit_note(index : int) -> void:
-	pass
+func hit_note(index : int, time_when_hit : float, hit_type : RubiconLevelNoteHitResult.Hit) -> void:
+	var result : RubiconLevelNoteHitResult
+	if results[index] != null:
+		result = results[index]
+	else:
+		result = RubiconLevelNoteHitResult.new()
+	
+	result.data_index = index
+	result.scoring_hit = hit_type
+	result.time_when_hit = time_when_hit
 
-@abstract func sort_graphic(data_index : int) -> void
+	var is_start : bool = (hit_type == RubiconLevelNoteHitResult.Hit.HIT_COMPLETE and data[index].ending_row == null) or (hit_type == RubiconLevelNoteHitResult.Hit.HIT_INCOMPLETE and data[index].ending_row != null)
+	var millisecond_position : float = data[index].get_millisecond_start_position() if is_start else data[index].get_millisecond_end_position()
+	result.time_distance = time_when_hit - millisecond_position
+
+	var ratings : Array[RubiconLevelNoteHitResult.Judgment]
+	var hit_windows : Array[float]
+	if settings.judgment_enabled & RubiconLevelNoteHitResult.Judgment.JUDGMENT_PERFECT == RubiconLevelNoteHitResult.Judgment.JUDGMENT_PERFECT:
+		ratings.append(RubiconLevelNoteHitResult.Judgment.JUDGMENT_PERFECT)
+		hit_windows.append(settings.judgment_window_perfect)
+	if settings.judgment_enabled & RubiconLevelNoteHitResult.Judgment.JUDGMENT_GREAT == RubiconLevelNoteHitResult.Judgment.JUDGMENT_GREAT:
+		ratings.append(RubiconLevelNoteHitResult.Judgment.JUDGMENT_GREAT)
+		hit_windows.append(settings.judgment_window_great)
+	if settings.judgment_enabled & RubiconLevelNoteHitResult.Judgment.JUDGMENT_GOOD == RubiconLevelNoteHitResult.Judgment.JUDGMENT_GOOD:
+		ratings.append(RubiconLevelNoteHitResult.Judgment.JUDGMENT_GOOD)
+		hit_windows.append(settings.judgment_window_good)
+	if settings.judgment_enabled & RubiconLevelNoteHitResult.Judgment.JUDGMENT_OKAY == RubiconLevelNoteHitResult.Judgment.JUDGMENT_OKAY:
+		ratings.append(RubiconLevelNoteHitResult.Judgment.JUDGMENT_OKAY)
+		hit_windows.append(settings.judgment_window_okay)
+	if settings.judgment_enabled & RubiconLevelNoteHitResult.Judgment.JUDGMENT_BAD == RubiconLevelNoteHitResult.Judgment.JUDGMENT_BAD:
+		ratings.append(RubiconLevelNoteHitResult.Judgment.JUDGMENT_BAD)
+		hit_windows.append(settings.judgment_window_bad)
+	
+	var rating : RubiconLevelNoteHitResult.Judgment = RubiconLevelNoteHitResult.Judgment.JUDGMENT_MISS
+	for i in hit_windows.size():
+		if absf(result.time_distance) <= hit_windows[i]:
+			rating = ratings[i]
+			break
+	
+	result.scoring_rating = rating
+	
+	var note_type : StringName = data[index].type
+	var define_key : StringName = "%s_%s" % [note_type, get_mode_id()] if not note_type.is_empty() else get_mode_id()
+	get_controller().get_note_database()[define_key].note_hit(result)
+	results[index] = result
 
 func _notification(what: int) -> void:
 	match what:
@@ -116,8 +165,17 @@ func _process(delta: float) -> void:
 		note_spawn_end += 1
 	
 	# Handle rewinding
-	while note_hit_index > 0 and data[note_hit_index - 1].get_millisecond_end_position() - millisecond_position > -settings.judgment_window_bad:
+	while note_hit_index > 0 and data[note_hit_index - 1].get_millisecond_end_position() - millisecond_position > 0.0:
 		note_hit_index -= 1
+
+		if results[note_hit_index] != null:
+			print("res")
+			results[note_hit_index].reset()
+	
+	#if data[note_hit_index].ending_row != null and data[note_hit_index].get_millisecond_start_position() - millisecond_position > 0.0:
+	#	if results[note_hit_index] != null:
+	#		print("res 2")
+	#		results[note_hit_index].reset()
 	
 	while note_spawn_start > 0 and data[note_spawn_start - 1].get_millisecond_end_position() - millisecond_position > spawning_bound_minimum:
 		note_spawn_start -= 1
@@ -134,15 +192,12 @@ func _process(delta: float) -> void:
 	if note_hit_index >= data.size():
 		return
 	
-	while data[note_hit_index].get_millisecond_start_position() - millisecond_position < -settings.judgment_window_bad:
-		# miss idfk
-		note_hit_index += 1
-	
-	if not get_controller().autoplay:
+	if get_controller().autoplay:
+		_autoplay_process(millisecond_position)
 		return
 	
-	while data[note_hit_index].get_millisecond_start_position() - millisecond_position <= 0:
-		# hit for autoplay idk
+	while data[note_hit_index].get_millisecond_start_position() - millisecond_position < -settings.judgment_window_bad:
+		hit_note(note_hit_index, millisecond_position, RubiconLevelNoteHitResult.Hit.HIT_COMPLETE) # TODO: Add more forgiving hold notes
 		note_hit_index += 1
 
 func _property_can_revert(property: StringName) -> bool:

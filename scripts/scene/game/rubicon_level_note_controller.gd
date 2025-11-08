@@ -18,6 +18,46 @@ class_name RubiconLevelNoteController extends Control
 @export var autoplay : bool = false
 @export var inputs : RubiconLevelNoteInputMap
 
+@export_group("Performance", "performance_")
+@export var performance_max_score : float = 1000000
+@export var performance_score : float:
+	get:
+		var total_value : float = 0.0
+		var note_count : int = 0
+		for key in note_handlers:
+			var handler : RubiconLevelNoteHandler = note_handlers[key]
+			note_count += handler.data.size()
+
+			for i in handler.note_hit_index:
+				total_value += handler.results[i].scoring_value
+		
+		return (total_value / note_count) * performance_max_score
+
+@export_subgroup("Hits", "performance_hits")
+@export var performance_hits_perfect : int:
+	get:
+		return _get_result_count_of_rating(RubiconLevelNoteHitResult.Judgment.JUDGMENT_PERFECT)
+
+@export var performance_hits_great : int:
+	get:
+		return _get_result_count_of_rating(RubiconLevelNoteHitResult.Judgment.JUDGMENT_GREAT)
+
+@export var performance_hits_good : int:
+	get:
+		return _get_result_count_of_rating(RubiconLevelNoteHitResult.Judgment.JUDGMENT_GOOD)
+
+@export var performance_hits_okay : int:
+	get:
+		return _get_result_count_of_rating(RubiconLevelNoteHitResult.Judgment.JUDGMENT_OKAY)
+
+@export var performance_hits_bad : int:
+	get:
+		return _get_result_count_of_rating(RubiconLevelNoteHitResult.Judgment.JUDGMENT_BAD)
+
+@export var performance_hits_miss :  int:
+	get:
+		return _get_result_count_of_rating(RubiconLevelNoteHitResult.Judgment.JUDGMENT_MISS)
+
 var note_handlers : Dictionary[String, RubiconLevelNoteHandler]
 
 var _chart : RubiChart
@@ -27,7 +67,7 @@ var _level_2d : RubiconLevel2D
 var _level_3d : RubiconLevel3D
 
 var _override_note_database : RubiconLevelNoteDatabase
-var _internal_note_database : Dictionary[StringName, RubiconLevelNoteDatabaseValue]
+var _internal_note_database : Dictionary[StringName, RubiconLevelNoteMetadata]
 
 func _init() -> void:
 	set_process_internal(true)
@@ -85,7 +125,7 @@ func _notification(what: int) -> void:
 				
 				parent = parent.get_parent()
 
-func get_note_database() -> Dictionary[StringName, RubiconLevelNoteDatabaseValue]:
+func get_note_database() -> Dictionary[StringName, RubiconLevelNoteMetadata]:
 	return _internal_note_database
 
 func update_chart() -> void:
@@ -114,3 +154,16 @@ func get_level_metadata() -> RubiconLevelMetadata:
 		return _level_3d.metadata
 	
 	return null
+
+func _get_result_count_of_rating(rating : RubiconLevelNoteHitResult.Judgment) -> int:
+	var count : int = 0
+	for key in note_handlers:
+		var handler : RubiconLevelNoteHandler = note_handlers[key]
+		for i in handler.note_hit_index:
+			var result : RubiconLevelNoteHitResult = handler.results[i]
+			if result.scoring_rating != rating:
+				continue
+				
+			count += 1
+		
+	return count
