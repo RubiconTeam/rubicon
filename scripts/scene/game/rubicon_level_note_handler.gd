@@ -54,12 +54,12 @@ func update_notes() -> void:
 
 func spawn_note(index : int) -> void:
 	var note_type : StringName = data[index].type
-	if not _note_pool.has(note_type):
-		_note_pool[note_type] = Array()
+	var define_key : StringName = "%s_%s" % [note_type, get_mode_id()] if not note_type.is_empty() else get_mode_id()
+	if not _note_pool.has(define_key):
+		_note_pool[define_key] = Array()
 	
-	var graphic : RubiconLevelNote = _note_pool[note_type].pop_back()
+	var graphic : RubiconLevelNote = _note_pool[define_key].pop_back()
 	if graphic == null:
-		var define_key : StringName = "%s_%s" % [note_type, get_mode_id()] if not note_type.is_empty() else get_mode_id()
 		var skin : RubiconLevelNoteMetadata = get_controller().get_note_database()[define_key]
 		var packed : PackedScene = skin.scene
 		
@@ -78,7 +78,9 @@ func despawn_note(index : int) -> void:
 	var graphic : RubiconLevelNote = graphics[index]
 	
 	remove_child(graphic)
-	_note_pool[note_type].append(graphic)
+
+	var define_key : StringName = "%s_%s" % [note_type, get_mode_id()] if not note_type.is_empty() else get_mode_id()
+	_note_pool[define_key].append(graphic)
 	
 	graphics[index] = null
 
@@ -153,15 +155,9 @@ func _process(delta: float) -> void:
 	
 	# Handle going forward
 	while note_spawn_start < data.size() and data[note_spawn_start].get_millisecond_end_position() - millisecond_position < spawning_bound_minimum:
-		if graphics[note_spawn_start] != null:
-			despawn_note(note_spawn_start)
-		
 		note_spawn_start += 1
 	
 	while note_spawn_end < data.size() and data[note_spawn_end].get_millisecond_start_position() - millisecond_position <= spawning_bound_maximum:
-		if graphics[note_spawn_end] == null:
-			spawn_note(note_spawn_end)
-		
 		note_spawn_end += 1
 	
 	# Handle rewinding
@@ -176,15 +172,21 @@ func _process(delta: float) -> void:
 	
 	while note_spawn_start > 0 and data[note_spawn_start - 1].get_millisecond_end_position() - millisecond_position > spawning_bound_minimum:
 		note_spawn_start -= 1
-		
-		if graphics[note_spawn_start] == null:
-			spawn_note(note_spawn_start)
 	
 	while note_spawn_end - 1 > 0 and data[note_spawn_end - 1].get_millisecond_start_position() - millisecond_position > spawning_bound_maximum:
 		note_spawn_end -= 1
-		
-		if graphics[note_spawn_end] != null:
-			despawn_note(note_spawn_end)
+	
+	for i in range(0, note_spawn_start):
+		if graphics[i] != null:
+			despawn_note(i)
+
+	for i in range(note_spawn_end, data.size()):
+		if graphics[i] != null:
+			despawn_note(i)
+
+	for i in range(note_spawn_start, note_spawn_end):
+		if graphics[i] == null:
+			spawn_note(i)
 	
 	if note_hit_index >= data.size():
 		return
