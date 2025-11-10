@@ -168,10 +168,11 @@ func _process(delta: float) -> void:
 	while _has_passed_last_note(millisecond_position):
 		_roll_hit_back()
 	
-	if _has_passed_current_long_note(millisecond_position) and results[note_hit_index] != null:
-		results[note_hit_index].reset(RubiconLevelNoteHitResult.Hit.HIT_NONE)
-	elif _is_inside_of_incomplete_note(millisecond_position):
-		_reset_to_incomplete_note()
+	if note_hit_index < data.size():
+		if _has_passed_current_long_note(millisecond_position) and results[note_hit_index] != null:
+			results[note_hit_index].reset(RubiconLevelNoteHitResult.Hit.HIT_NONE)
+		elif _is_inside_of_incomplete_note(millisecond_position):
+			_reset_to_incomplete_note()
 	
 	while note_spawn_start > 0 and data[note_spawn_start - 1].get_millisecond_end_position() - millisecond_position > spawning_bound_minimum:
 		note_spawn_start -= 1
