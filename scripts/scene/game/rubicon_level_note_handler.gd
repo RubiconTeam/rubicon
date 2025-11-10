@@ -87,7 +87,7 @@ func hit_note(index : int, time_when_hit : float, hit_type : RubiconLevelNoteHit
 	if results[index] != null:
 		result = results[index]
 	else:
-		result = RubiconLevelNoteHitResult.new()
+		result = RubiconLevelNoteHitResult.new(self)
 	
 	result.data_index = index
 	result.scoring_hit = hit_type
@@ -165,17 +165,13 @@ func _process(delta: float) -> void:
 		note_spawn_end += 1
 	
 	# Handle rewinding
-	while note_hit_index > 0 and data[note_hit_index - 1].get_millisecond_end_position() - millisecond_position > 0.0:
-		note_hit_index -= 1
-
-		if results[note_hit_index] != null:
-			print("res")
-			results[note_hit_index].reset()
+	while _has_passed_last_note(millisecond_position):
+		_roll_hit_back()
 	
-	#if data[note_hit_index].ending_row != null and data[note_hit_index].get_millisecond_start_position() - millisecond_position > 0.0:
-	#	if results[note_hit_index] != null:
-	#		print("res 2")
-	#		results[note_hit_index].reset()
+	if _has_passed_current_long_note(millisecond_position) and results[note_hit_index] != null:
+		results[note_hit_index].reset(RubiconLevelNoteHitResult.Hit.HIT_NONE)
+	elif _is_inside_of_incomplete_note(millisecond_position):
+		_reset_to_incomplete_note()
 	
 	while note_spawn_start > 0 and data[note_spawn_start - 1].get_millisecond_end_position() - millisecond_position > spawning_bound_minimum:
 		note_spawn_start -= 1
@@ -194,11 +190,42 @@ func _process(delta: float) -> void:
 	
 	if get_controller().autoplay:
 		_autoplay_process(millisecond_position)
-		return
 	
-	while data[note_hit_index].get_millisecond_start_position() - millisecond_position < -settings.judgment_window_bad:
+	var should_complete : bool = results[note_hit_index] != null and results[note_hit_index].scoring_hit == RubiconLevelNoteHitResult.Hit.HIT_INCOMPLETE and data[note_hit_index].get_millisecond_end_position() - millisecond_position <= 0.0
+	if should_complete:
+		hit_note(note_hit_index, data[note_hit_index].get_millisecond_end_position(), RubiconLevelNoteHitResult.Hit.HIT_COMPLETE)
+		note_hit_index += 1
+	
+	while not get_controller().autoplay and data[note_hit_index].get_millisecond_start_position() - millisecond_position < -settings.judgment_window_bad:
 		hit_note(note_hit_index, millisecond_position, RubiconLevelNoteHitResult.Hit.HIT_COMPLETE) # TODO: Add more forgiving hold notes
 		note_hit_index += 1
+
+func _has_passed_last_note(millisecond_position : float) -> bool:
+	var has_last_note : bool = note_hit_index > 0
+	if not has_last_note:
+		return false
+	
+	var passed_end_of_last_single_note : bool = data[note_hit_index - 1].ending_row == null and data[note_hit_index - 1].get_millisecond_end_position() - millisecond_position >= settings.judgment_window_bad
+	var passed_end_of_last_long_note : bool = data[note_hit_index - 1].ending_row != null and data[note_hit_index - 1].get_millisecond_end_position() - millisecond_position >= 0.0
+	return passed_end_of_last_single_note or passed_end_of_last_long_note
+
+func _has_passed_current_long_note(millisecond_position : float) -> bool:
+	var passed_start_of_current_long_note : bool = data[note_hit_index].ending_row != null and data[note_hit_index].get_millisecond_start_position() - millisecond_position >= settings.judgment_window_bad
+	return passed_start_of_current_long_note
+
+func _is_inside_of_incomplete_note(millisecond_position : float) -> bool:
+	var passed_start_of_current_long_note : bool = data[note_hit_index].ending_row != null and data[note_hit_index].get_millisecond_start_position() - millisecond_position >= settings.judgment_window_bad
+	return results[note_hit_index] != null and results[note_hit_index].scoring_hit == RubiconLevelNoteHitResult.Hit.HIT_INCOMPLETE
+
+func _roll_hit_back() -> void:
+	note_hit_index -= 1
+	results[note_hit_index].reset(RubiconLevelNoteHitResult.Hit.HIT_NONE)
+
+func _reset_to_incomplete_note() -> void:
+	if results[note_hit_index] == null or results[note_hit_index].scoring_hit != RubiconLevelNoteHitResult.Hit.HIT_COMPLETE:
+		return
+	
+	results[note_hit_index].reset(RubiconLevelNoteHitResult.Hit.HIT_INCOMPLETE)
 
 func _property_can_revert(property: StringName) -> bool:
 	if property == "settings":

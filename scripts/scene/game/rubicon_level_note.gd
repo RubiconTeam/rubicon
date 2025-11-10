@@ -32,7 +32,7 @@ func was_missed() -> bool:
 	return result.scoring_rating == RubiconLevelNoteHitResult.Judgment.JUDGMENT_MISS
 
 func get_hit_result() -> RubiconLevelNoteHitResult:
-	return _handler.results[data_index] if _handler != null and _handler.note_hit_index > data_index else null
+	return _handler.results[data_index] if _handler != null else null
 
 func _enter_tree() -> void:
 	pass

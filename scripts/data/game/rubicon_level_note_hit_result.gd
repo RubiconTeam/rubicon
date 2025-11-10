@@ -95,9 +95,21 @@ enum ModifierFlags
 @export var time_distance : float
 @export var time_when_hit : float
 
-func reset() -> void:
-	flags = ModifierFlags.MODIFIER_FLAG_NONE
-	scoring_health_delta = 0
-	scoring_value = 0.0
-	scoring_rating = Judgment.JUDGMENT_NONE
-	scoring_hit = Hit.HIT_NONE
+var handler : RubiconLevelNoteHandler
+
+func _init(assigned_handler : RubiconLevelNoteHandler) -> void:
+	handler = assigned_handler
+
+func reset(to_state : Hit) -> void:
+	if to_state == Hit.HIT_COMPLETE or (to_state == Hit.HIT_INCOMPLETE and scoring_hit == Hit.HIT_INCOMPLETE):
+		return # what does this even mean
+
+	match to_state:
+		Hit.HIT_NONE:
+			flags = ModifierFlags.MODIFIER_FLAG_NONE
+			scoring_health_delta = 0
+			scoring_value = 0.0
+			scoring_rating = Judgment.JUDGMENT_NONE
+			scoring_hit = to_state
+		Hit.HIT_INCOMPLETE:
+			handler.hit_note(data_index, handler.data[data_index].get_millisecond_start_position(), Hit.HIT_INCOMPLETE)
