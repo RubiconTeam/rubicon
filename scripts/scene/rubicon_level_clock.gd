@@ -56,7 +56,7 @@ var _current_frame_time : float
 var _relative_time_offset : float
 
 func get_time_precise() -> float:
-	return _current_frame_time + (Time.get_unix_time_from_system() - _relative_time_offset)
+	return _current_frame_time + (Time.get_unix_time_from_system() - _relative_time_offset) * 1000.0
 
 func get_time_changes() -> Array[RubiconTimeChange]:
 	if _level_2d != null and _level_2d.metadata != null:

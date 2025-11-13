@@ -72,6 +72,49 @@ var _internal_note_database : Dictionary[StringName, RubiconLevelNoteMetadata]
 func _init() -> void:
 	set_process_internal(true)
 
+func get_note_database() -> Dictionary[StringName, RubiconLevelNoteMetadata]:
+	return _internal_note_database
+
+func update_chart() -> void:
+	var metadata : RubiconLevelMetadata = get_level_metadata()
+	if metadata == null:
+		return
+	
+	_chart.initialize(metadata.time_changes)
+	for id in note_handlers:
+		note_handlers[id].update_notes()
+
+func get_level_clock() -> RubiconLevelClock:
+	if _level_2d != null:
+		return _level_2d.clock
+	
+	if _level_3d != null:
+		return _level_3d.clock
+	
+	return null
+
+func get_level_metadata() -> RubiconLevelMetadata:
+	if _level_2d != null:
+		return _level_2d.metadata
+	
+	if _level_3d != null:
+		return _level_3d.metadata
+	
+	return null
+
+func _get_result_count_of_rating(rating : RubiconLevelNoteHitResult.Judgment) -> int:
+	var count : int = 0
+	for key in note_handlers:
+		var handler : RubiconLevelNoteHandler = note_handlers[key]
+		for i in handler.note_hit_index:
+			var result : RubiconLevelNoteHitResult = handler.results[i]
+			if result.scoring_rating != rating:
+				continue
+				
+			count += 1
+		
+	return count
+
 func _reset_note_database() -> void:
 	_internal_note_database.clear()
 	if _override_note_database != null:
@@ -125,45 +168,19 @@ func _notification(what: int) -> void:
 				
 				parent = parent.get_parent()
 
-func get_note_database() -> Dictionary[StringName, RubiconLevelNoteMetadata]:
-	return _internal_note_database
-
-func update_chart() -> void:
-	var metadata : RubiconLevelMetadata = get_level_metadata()
-	if metadata == null:
+func _input(event: InputEvent) -> void:
+	if autoplay or event.is_echo() or inputs == null or not inputs.has_event_registered(event):
 		return
 	
-	_chart.initialize(metadata.time_changes)
-	for id in note_handlers:
-		note_handlers[id].update_notes()
+	var id : StringName = inputs.get_handler_id_for_event(event)
+	if not note_handlers.has(id):
+		return
+	
+	var handler : RubiconLevelNoteHandler = note_handlers[id]
+	if not handler._should_process():
+		return
 
-func get_level_clock() -> RubiconLevelClock:
-	if _level_2d != null:
-		return _level_2d.clock
-	
-	if _level_3d != null:
-		return _level_3d.clock
-	
-	return null
-
-func get_level_metadata() -> RubiconLevelMetadata:
-	if _level_2d != null:
-		return _level_2d.metadata
-	
-	if _level_3d != null:
-		return _level_3d.metadata
-	
-	return null
-
-func _get_result_count_of_rating(rating : RubiconLevelNoteHitResult.Judgment) -> int:
-	var count : int = 0
-	for key in note_handlers:
-		var handler : RubiconLevelNoteHandler = note_handlers[key]
-		for i in handler.note_hit_index:
-			var result : RubiconLevelNoteHitResult = handler.results[i]
-			if result.scoring_rating != rating:
-				continue
-				
-			count += 1
-		
-	return count
+	if event.is_pressed():
+		note_handlers[id]._press(event)
+	else:
+		note_handlers[id]._release(event)

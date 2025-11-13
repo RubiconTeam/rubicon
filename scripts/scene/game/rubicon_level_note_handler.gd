@@ -26,6 +26,8 @@ func get_controller() -> RubiconLevelNoteController:
 
 @abstract func sort_graphic(data_index : int) -> void
 
+@abstract func _press(event : InputEvent) -> void
+@abstract func _release(event : InputEvent) -> void
 @abstract func _autoplay_process(millisecond_position : float) -> void
 
 func update_notes() -> void:
@@ -199,7 +201,7 @@ func _process(delta: float) -> void:
 		hit_note(note_hit_index, data[note_hit_index].get_millisecond_end_position(), RubiconLevelNoteHitResult.Hit.HIT_COMPLETE)
 		note_hit_index += 1
 	
-	while not get_controller().autoplay and data[note_hit_index].get_millisecond_start_position() - millisecond_position < -settings.judgment_window_bad:
+	while not get_controller().autoplay and note_hit_index >= data.size() and data[note_hit_index].get_millisecond_start_position() - millisecond_position < -settings.judgment_window_bad and (results[note_hit_index] == null or results[note_hit_index].scoring_hit == RubiconLevelNoteHitResult.Hit.HIT_NONE):
 		hit_note(note_hit_index, millisecond_position, RubiconLevelNoteHitResult.Hit.HIT_COMPLETE) # TODO: Add more forgiving hold notes
 		note_hit_index += 1
 
