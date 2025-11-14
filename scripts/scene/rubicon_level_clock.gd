@@ -10,7 +10,7 @@ class_name RubiconLevelClock extends Node
 		if not is_on_animation:
 			return 0
 		
-		return (_animation_player.current_animation_position + offset) * 1000.0
+		return maxf((_animation_player.current_animation_position + offset) * 1000.0, 0.0)
 	set(val):
 		var is_on_animation : bool = animation_player != null and (not animation_player.assigned_animation.is_empty() or animation_player.is_playing())
 		if not is_on_animation:
@@ -20,21 +20,21 @@ class_name RubiconLevelClock extends Node
 
 @export var time_measure : float:
 	get:
-		return RubiconTimeChange.get_measure_at_millisecond(get_time_changes(), time_milliseconds * 1000.0)
+		return RubiconTimeChange.get_measure_at_millisecond(get_time_changes(), time_milliseconds)
 	set(val):
-		time_milliseconds = RubiconTimeChange.get_measure_at_millisecond(get_time_changes(), val)
+		time_milliseconds = RubiconTimeChange.get_millisecond_at_measure(get_time_changes(), val)
 
 @export var time_beat : float:
 	get:
-		return RubiconTimeChange.get_beat_at_millisecond(get_time_changes(), time_milliseconds * 1000.0)
+		return RubiconTimeChange.get_beat_at_millisecond(get_time_changes(), time_milliseconds)
 	set(val):
-		time_milliseconds = RubiconTimeChange.get_beat_at_millisecond(get_time_changes(), val)
+		time_milliseconds = RubiconTimeChange.get_millisecond_at_beat(get_time_changes(), val)
 
 @export var time_step : float:
 	get:
-		return RubiconTimeChange.get_step_at_millisecond(get_time_changes(), time_milliseconds * 1000.0)
+		return RubiconTimeChange.get_step_at_millisecond(get_time_changes(), time_milliseconds)
 	set(val):
-		time_milliseconds = RubiconTimeChange.get_step_at_millisecond(get_time_changes(), val)
+		time_milliseconds = RubiconTimeChange.get_millisecond_at_step(get_time_changes(), val)
 
 var level_2d : RubiconLevel2D:
 	get:
