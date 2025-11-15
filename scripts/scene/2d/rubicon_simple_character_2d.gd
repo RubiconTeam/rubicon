@@ -2,60 +2,115 @@
 extends Node2D
 class_name RubiconSimpleCharacter2D
 
-@export_group("References")
-@export var root_animation_player:AnimationPlayer
+var note_controller:RubiconLevelNoteController:
+	get():
+		if _note_controller_path.is_empty() or _note_controller_path == null:
+			return null
+		
+		return get_node(_note_controller_path)
+@export_storage var _note_controller_path:NodePath
 
-#region Editor Animation Handling
+var anim_player:AnimationPlayer:
+	get():
+		if _anim_player_path.is_empty() or _anim_player_path == null:
+			return null
+		
+		return get_node(_anim_player_path)
+@export_storage var _anim_player_path:NodePath
+
+var is_tree_root:bool:
+	get():
+		if !is_inside_tree():
+			return false
+		
+		if get_tree() != null and self == get_tree().edited_scene_root:
+			return true
+		return false
+
+func _get_configuration_warnings() -> PackedStringArray:
+	var warnings:PackedStringArray
+	
+	if anim_player == null or _anim_player_path.is_empty():
+		warnings.append("No root animation player assigned. Make sure to assign one under References in the character's properties")
+	
+	if !is_tree_root and (note_controller == null or _note_controller_path.is_empty()):
+		warnings.append("Characters require a note controller to work. Make sure to assign one under References in the character's properties")
+	
+	return warnings
+
+#region Custom Property Handling
 @export_storage var animations:Dictionary[StringName,StringName] = {}
-var directions:Array[StringName] = ["left", "down", "up", "right"]
+var directions:Array[StringName] = [&"left", &"down", &"up", &"right"]
 var anim_player_list:PackedStringArray:
 	get():
-		if root_animation_player != null:
-			var anims:PackedStringArray = ["None"]
-			anims.append_array(root_animation_player.get_animation_list())
+		if anim_player != null:
+			var anims:PackedStringArray = [&"None"]
+			anims.append_array(anim_player.get_animation_list())
 			return anims
-		return ["None"]
+		return [&"None"]
 
 func _get_property_list() -> Array[Dictionary]:
 	var properties:Array[Dictionary]
 	
+	if anim_player != null:
+		properties.append({
+			name = &"Animation Data",
+			type = TYPE_NIL,
+			usage = PROPERTY_USAGE_GROUP
+		})
+		
+		properties.append_array(
+			[{
+			name = &"Sing",
+			type = TYPE_NIL,
+			usage = PROPERTY_USAGE_SUBGROUP,
+			hint_string = "sing_"
+			}] + get_anim_properties_from_array(directions, "sing_")
+			)
+		
+		properties.append_array(
+			[{
+			name = &"Miss",
+			type = TYPE_NIL,
+			usage = PROPERTY_USAGE_SUBGROUP,
+			hint_string = "miss_"
+			}] + get_anim_properties_from_array(directions, "miss_")
+			)
+	
 	properties.append({
-		name = "Animation Data",
+		name = &"References",
 		type = TYPE_NIL,
 		usage = PROPERTY_USAGE_GROUP
 	})
 	
 	properties.append({
-		name = "Sing",
-		type = TYPE_NIL,
-		usage = PROPERTY_USAGE_SUBGROUP,
-		hint_string = "sing_"
+		name = &"root_animation_player",
+		type = TYPE_NODE_PATH,
+		hint_string = "AnimationPlayer", 
+		usage = PROPERTY_USAGE_EDITOR
 	})
-	for animation:StringName in directions:
+	
+	if !is_tree_root:
 		properties.append({
-				name = "sing_"+animation,
+		name = &"_note_controller",
+		type = TYPE_NODE_PATH,
+		hint = PROPERTY_HINT_NODE_PATH_VALID_TYPES,
+		hint_string = "RubiconLevelNoteController", 
+		usage = PROPERTY_USAGE_DEFAULT
+	})
+	
+	return properties
+
+func get_anim_properties_from_array(array:PackedStringArray, prefix:StringName) -> Array[Dictionary]:
+	var properties:Array[Dictionary]
+	for animation:StringName in array:
+		properties.append({
+				name = prefix+animation,
 				hint = PROPERTY_HINT_ENUM,
 				type = TYPE_STRING_NAME,
 				usage = PROPERTY_USAGE_EDITOR,
 				hint_string = ",".join(anim_player_list)
 			})
-	
-	properties.append({
-		name = "Miss",
-		type = TYPE_NIL,
-		usage = PROPERTY_USAGE_SUBGROUP,
-		hint_string = "miss_"
-	})
-	
-	for animation:StringName in directions:
-		properties.append({
-				name = "miss_"+animation,
-				hint = PROPERTY_HINT_ENUM,
-				type = TYPE_STRING_NAME,
-				usage = PROPERTY_USAGE_EDITOR,
-				hint_string = ",".join(anim_player_list)
-			})
-	
 	return properties
 
 func _get(property: StringName) -> Variant:
@@ -67,6 +122,16 @@ func _get(property: StringName) -> Variant:
 				return property_get_revert(property)
 			return animations[property]
 		return property_get_revert(property)
+	
+	match property:
+		&"root_animation_player":
+			return _anim_player_path
+		&"_note_controller":
+			return _note_controller_path
+	
+	if property == &"root_animation_player":
+		return _anim_player_path
+	
 	return null
 
 func _set(property: StringName, value: Variant) -> bool:
@@ -77,6 +142,15 @@ func _set(property: StringName, value: Variant) -> bool:
 		
 		animations[property] = value
 		return true
+	
+	match property:
+		&"root_animation_player":
+			_anim_player_path = value
+			anim_player = get_node(_anim_player_path)
+			return true
+		&"_note_controller":
+			_note_controller_path = value
+			return true
 	
 	return false
 
@@ -101,6 +175,5 @@ func _property_get_revert(property: StringName) -> Variant:
 				anim = _anim
 				break
 		return anim
-	print("hello")
 	return property_get_revert(property)
 #endregion

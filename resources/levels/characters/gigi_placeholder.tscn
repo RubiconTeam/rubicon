@@ -1,8 +1,11 @@
-[gd_scene load_steps=10 format=3 uid="uid://cssfk3u4d5q1x"]
+[gd_scene load_steps=12 format=3 uid="uid://cssfk3u4d5q1x"]
 
 [ext_resource type="Script" uid="uid://dqqqiv8d0q8gc" path="res://addons/rubicon/scripts/scene/2d/rubicon_simple_character_2d.gd" id="1_snahq"]
 [ext_resource type="SpriteFrames" uid="uid://7h5xqubgdxam" path="res://addons/rubicon/assets/levels/characters/gigi_placeholder/gigi_placeholder.tres" id="2_5ui0e"]
 [ext_resource type="AnimationLibrary" uid="uid://b0vhbwobnaic7" path="res://addons/rubicon/assets/levels/characters/gigi_placeholder/gigi_placeholder_library.tres" id="3_s0343"]
+
+[sub_resource type="Animation" id="Animation_4tnaj"]
+length = 0.001
 
 [sub_resource type="Animation" id="Animation_ojfnf"]
 resource_name = "dance_idle"
@@ -18,6 +21,19 @@ tracks/0/keys = {
 }
 
 [sub_resource type="Animation" id="Animation_rs2io"]
+resource_name = "sing_down"
+tracks/0/type = "animation"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite/SpriteAnimationPlayer")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"clips": PackedStringArray("gigi_placeholder_library/down"),
+"times": PackedFloat32Array(0)
+}
+
+[sub_resource type="Animation" id="Animation_bxco1"]
 resource_name = "sing_down"
 tracks/0/type = "animation"
 tracks/0/imported = false
@@ -71,16 +87,19 @@ tracks/0/keys = {
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_bxco1"]
 _data = {
+&"RESET": SubResource("Animation_4tnaj"),
 &"dance_idle": SubResource("Animation_ojfnf"),
 &"sing_down": SubResource("Animation_rs2io"),
+&"sing_down_alt": SubResource("Animation_bxco1"),
 &"sing_left": SubResource("Animation_5ui0e"),
 &"sing_right": SubResource("Animation_s0343"),
 &"sing_up": SubResource("Animation_pp1a3")
 }
 
-[node name="GigiPlaceholder" type="Node2D" node_paths=PackedStringArray("root_animation_player")]
+[node name="GigiPlaceholder" type="Node2D"]
 script = ExtResource("1_snahq")
-root_animation_player = NodePath("RootAnimationPlayer")
+_note_controller_path = null
+_anim_player_path = NodePath("RootAnimationPlayer")
 animations = Dictionary[StringName, StringName]({
 &"miss_down": &"",
 &"miss_left": &"",
@@ -91,14 +110,6 @@ animations = Dictionary[StringName, StringName]({
 &"sing_right": &"sing_right",
 &"sing_up": &"sing_up"
 })
-sing_left = &"sing_left"
-sing_down = &"sing_down"
-sing_up = &"sing_up"
-sing_right = &"sing_right"
-miss_left = "None"
-miss_down = "None"
-miss_up = "None"
-miss_right = "None"
 
 [node name="Sprite" type="AnimatedSprite2D" parent="."]
 texture_filter = 1
