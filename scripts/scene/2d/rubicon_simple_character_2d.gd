@@ -36,7 +36,7 @@ func _get_property_list() -> Array[Dictionary]:
 				name = "sing_"+animation,
 				hint = PROPERTY_HINT_ENUM,
 				type = TYPE_STRING_NAME,
-				usage = PROPERTY_USAGE_DEFAULT,
+				usage = PROPERTY_USAGE_EDITOR,
 				hint_string = ",".join(anim_player_list)
 			})
 	
@@ -52,7 +52,7 @@ func _get_property_list() -> Array[Dictionary]:
 				name = "miss_"+animation,
 				hint = PROPERTY_HINT_ENUM,
 				type = TYPE_STRING_NAME,
-				usage = PROPERTY_USAGE_DEFAULT,
+				usage = PROPERTY_USAGE_EDITOR,
 				hint_string = ",".join(anim_player_list)
 			})
 	
@@ -63,6 +63,8 @@ func _get(property: StringName) -> Variant:
 		if animations[property].is_empty():
 			return "None"
 		if animations.has(property):
+			if !anim_player_list.has(animations[property]):
+				return property_get_revert(property)
 			return animations[property]
 		return property_get_revert(property)
 	return null
@@ -71,12 +73,12 @@ func _set(property: StringName, value: Variant) -> bool:
 	if (property.begins_with("sing_") or property.begins_with("miss_")) and value != null:
 		if value.to_lower() == "none":
 			animations[property] = ""
-			return false
+			return true
 		
 		animations[property] = value
-		return false
+		return true
 	
-	return true
+	return false
 
 func _property_can_revert(property: StringName) -> bool:
 	if property.begins_with("sing_") or property.begins_with("miss_"):
