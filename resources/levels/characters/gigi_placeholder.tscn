@@ -1,0 +1,120 @@
+[gd_scene load_steps=10 format=3 uid="uid://cssfk3u4d5q1x"]
+
+[ext_resource type="Script" uid="uid://dqqqiv8d0q8gc" path="res://addons/rubicon/scripts/scene/2d/rubicon_simple_character_2d.gd" id="1_snahq"]
+[ext_resource type="SpriteFrames" uid="uid://7h5xqubgdxam" path="res://addons/rubicon/assets/levels/characters/gigi_placeholder/gigi_placeholder.tres" id="2_5ui0e"]
+[ext_resource type="AnimationLibrary" uid="uid://b0vhbwobnaic7" path="res://addons/rubicon/assets/levels/characters/gigi_placeholder/gigi_placeholder_library.tres" id="3_s0343"]
+
+[sub_resource type="Animation" id="Animation_ojfnf"]
+resource_name = "dance_idle"
+tracks/0/type = "animation"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite/SpriteAnimationPlayer")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"clips": PackedStringArray("gigi_placeholder_library/idle"),
+"times": PackedFloat32Array(0)
+}
+
+[sub_resource type="Animation" id="Animation_rs2io"]
+resource_name = "sing_down"
+tracks/0/type = "animation"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite/SpriteAnimationPlayer")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"clips": PackedStringArray("gigi_placeholder_library/down"),
+"times": PackedFloat32Array(0)
+}
+
+[sub_resource type="Animation" id="Animation_5ui0e"]
+resource_name = "sing_left"
+tracks/0/type = "animation"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite/SpriteAnimationPlayer")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"clips": PackedStringArray("gigi_placeholder_library/left"),
+"times": PackedFloat32Array(0)
+}
+
+[sub_resource type="Animation" id="Animation_s0343"]
+resource_name = "sing_right"
+tracks/0/type = "animation"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite/SpriteAnimationPlayer")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"clips": PackedStringArray("gigi_placeholder_library/right"),
+"times": PackedFloat32Array(0)
+}
+
+[sub_resource type="Animation" id="Animation_pp1a3"]
+resource_name = "sing_up"
+tracks/0/type = "animation"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite/SpriteAnimationPlayer")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"clips": PackedStringArray("gigi_placeholder_library/up"),
+"times": PackedFloat32Array(0)
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_bxco1"]
+_data = {
+&"dance_idle": SubResource("Animation_ojfnf"),
+&"sing_down": SubResource("Animation_rs2io"),
+&"sing_left": SubResource("Animation_5ui0e"),
+&"sing_right": SubResource("Animation_s0343"),
+&"sing_up": SubResource("Animation_pp1a3")
+}
+
+[node name="GigiPlaceholder" type="Node2D" node_paths=PackedStringArray("root_animation_player")]
+script = ExtResource("1_snahq")
+root_animation_player = NodePath("RootAnimationPlayer")
+animations = Dictionary[StringName, StringName]({
+&"miss_down": &"",
+&"miss_left": &"",
+&"miss_right": &"",
+&"miss_up": &"",
+&"sing_down": &"sing_down",
+&"sing_left": &"sing_left",
+&"sing_right": &"sing_right",
+&"sing_up": &"sing_up"
+})
+sing_left = &"sing_left"
+sing_down = &"sing_down"
+sing_up = &"sing_up"
+sing_right = &"sing_right"
+miss_left = "None"
+miss_down = "None"
+miss_up = "None"
+miss_right = "None"
+
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+position = Vector2(36.000008, -390)
+scale = Vector2(5, 5)
+sprite_frames = ExtResource("2_5ui0e")
+animation = &"idle"
+frame = 3
+
+[node name="SpriteAnimationPlayer" type="AnimationPlayer" parent="Sprite"]
+libraries = {
+&"gigi_placeholder_library": ExtResource("3_s0343")
+}
+speed_scale = 0.5
+
+[node name="RootAnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+&"": SubResource("AnimationLibrary_bxco1")
+}
