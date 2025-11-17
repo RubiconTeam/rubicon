@@ -2,22 +2,71 @@
 extends Node2D
 class_name RubiconSimpleCharacter2D
 
+@export_group("Character Data")
+@export var should_dance:bool = true
+@export var should_sing:bool = true
+
+@export_group("References")
+@export var anim_player:AnimationPlayer:
+	set(value):
+		anim_player = value
+		notify_property_list_changed()
+
 var note_controller:RubiconLevelNoteController:
 	get():
-		if _note_controller_path.is_empty() or _note_controller_path == null:
+		if note_controller_path.is_empty() or note_controller_path == null:
 			return null
-		
-		return get_node(_note_controller_path)
-@export_storage var _note_controller_path:NodePath
+		return get_node(note_controller_path)
+var note_controller_path:NodePath
 
-var anim_player:AnimationPlayer:
+var camera_point:Marker2D:
 	get():
-		if _anim_player_path.is_empty() or _anim_player_path == null:
+		if camera_point_path.is_empty() or camera_point_path == null:
 			return null
-		
-		return get_node(_anim_player_path)
-@export_storage var _anim_player_path:NodePath
+		return get_node(camera_point_path)
+var camera_point_path:NodePath
+var camera_point_offset:Vector2
 
+var dancing:bool
+var singing:bool
+
+func connect_note_controller() -> void:
+	if note_controller != null:
+		note_controller.connect("note_press", note_press)
+
+func disconnect_note_controller() -> void:
+	if note_controller != null:
+		note_controller.disconnect("note_press", note_press)
+
+func note_press() -> void:
+	pass
+
+func dance() -> void:
+	pass
+
+func sing() -> void:
+	pass
+
+func play(anim_name:StringName, override_dance:bool = false, override_sing:bool = false, force:bool = true, warn_missing_animation:bool = false) -> void:
+	if anim_player == null:
+		printerr("Animation Player is null in character " + scene_file_path.get_file())
+		return
+	
+	if !anim_player.has_animation(anim_name):
+		if warn_missing_animation:
+			printerr('No animation "'+anim_name+'" found in character: ' + scene_file_path.get_file())
+		return
+	
+	if ((singing and !override_sing) or (dancing and !override_dance)):
+		return
+	
+	if anim_player.is_playing() and !force:
+		return
+	
+	anim_player.play(anim_name)
+	anim_player.seek(0.0)
+
+#region Custom Property Handling
 var is_tree_root:bool:
 	get():
 		if !is_inside_tree():
@@ -30,15 +79,18 @@ var is_tree_root:bool:
 func _get_configuration_warnings() -> PackedStringArray:
 	var warnings:PackedStringArray
 	
-	if anim_player == null or _anim_player_path.is_empty():
-		warnings.append("No root animation player assigned. Make sure to assign one under References in the character's properties")
+	if anim_player == null:
+		warnings.append(tr("No root animation player assigned. Make sure to assign one under the character's properties"))
 	
-	if !is_tree_root and (note_controller == null or _note_controller_path.is_empty()):
-		warnings.append("Characters require a note controller to work. Make sure to assign one under References in the character's properties")
+	if !is_tree_root and (note_controller == null or note_controller_path.is_empty()):
+		warnings.append(tr("Characters require a note controller to work. Make sure to assign one under the character's properties"))
+	
+	if !is_tree_root and (camera_point == null or camera_point_path.is_empty()):
+		warnings.append(tr("No camera point assigned. Cameras will ignore the character when supposed to aim at it."))
 	
 	return warnings
 
-#region Custom Property Handling
+
 @export_storage var animations:Dictionary[StringName,StringName] = {}
 var directions:Array[StringName] = [&"left", &"down", &"up", &"right"]
 var anim_player_list:PackedStringArray:
@@ -52,9 +104,38 @@ var anim_player_list:PackedStringArray:
 func _get_property_list() -> Array[Dictionary]:
 	var properties:Array[Dictionary]
 	
+	if !is_tree_root:
+		properties.append({
+			name = &"_note_controller",
+			type = TYPE_NODE_PATH,
+			hint = PROPERTY_HINT_NODE_PATH_VALID_TYPES,
+			hint_string = "RubiconLevelNoteController", 
+			usage = PROPERTY_USAGE_DEFAULT
+		})
+		
+		properties.append({
+			name = &"_camera_point",
+			type = TYPE_NODE_PATH,
+			hint = PROPERTY_HINT_NODE_PATH_VALID_TYPES,
+			hint_string = "Marker2D", 
+			usage = PROPERTY_USAGE_DEFAULT
+		})
+		
+		properties.append({
+			name = &"_camera_point_offset",
+			type = TYPE_VECTOR2,
+			usage = PROPERTY_USAGE_DEFAULT
+		})
+	
+	properties.append({
+		name = &"Animation Data",
+		type = TYPE_NIL,
+		usage = PROPERTY_USAGE_CATEGORY | PROPERTY_USAGE_EDITOR
+	})
+	
 	if anim_player != null:
 		properties.append({
-			name = &"Animation Data",
+			name = &"Mania Animation Data",
 			type = TYPE_NIL,
 			usage = PROPERTY_USAGE_GROUP
 		})
@@ -76,28 +157,6 @@ func _get_property_list() -> Array[Dictionary]:
 			hint_string = "miss_"
 			}] + get_anim_properties_from_array(directions, "miss_")
 			)
-	
-	properties.append({
-		name = &"References",
-		type = TYPE_NIL,
-		usage = PROPERTY_USAGE_GROUP
-	})
-	
-	properties.append({
-		name = &"root_animation_player",
-		type = TYPE_NODE_PATH,
-		hint_string = "AnimationPlayer", 
-		usage = PROPERTY_USAGE_EDITOR
-	})
-	
-	if !is_tree_root:
-		properties.append({
-		name = &"_note_controller",
-		type = TYPE_NODE_PATH,
-		hint = PROPERTY_HINT_NODE_PATH_VALID_TYPES,
-		hint_string = "RubiconLevelNoteController", 
-		usage = PROPERTY_USAGE_DEFAULT
-	})
 	
 	return properties
 
@@ -124,13 +183,8 @@ func _get(property: StringName) -> Variant:
 		return property_get_revert(property)
 	
 	match property:
-		&"root_animation_player":
-			return _anim_player_path
 		&"_note_controller":
-			return _note_controller_path
-	
-	if property == &"root_animation_player":
-		return _anim_player_path
+			return note_controller_path
 	
 	return null
 
@@ -144,13 +198,26 @@ func _set(property: StringName, value: Variant) -> bool:
 		return true
 	
 	match property:
-		&"root_animation_player":
-			_anim_player_path = value
-			anim_player = get_node(_anim_player_path)
-			return true
 		&"_note_controller":
-			_note_controller_path = value
+			if note_controller != null:
+				disconnect_note_controller()
+			
+			if value == null:
+				note_controller_path = ""
+				return true
+			note_controller_path = value
+			connect_note_controller()
 			return true
+		&"_camera_point":
+			if value == null:
+				camera_point_path = ""
+				return true
+			camera_point_path = value
+			return true
+		&"camera_point_offset":
+			if value == null:
+				
+				return true
 	
 	return false
 
@@ -158,9 +225,11 @@ func _property_can_revert(property: StringName) -> bool:
 	if property.begins_with("sing_") or property.begins_with("miss_"):
 		if get(property).to_lower() == "none":
 			return false
-		
 		return true
-
+	
+	if property == "_note_controller" and (note_controller_path != null or !note_controller_path.is_empty()):
+		return true
+	
 	return false
 
 func _property_get_revert(property: StringName) -> Variant:
@@ -175,5 +244,16 @@ func _property_get_revert(property: StringName) -> Variant:
 				anim = _anim
 				break
 		return anim
+	
+	if property == "_note_controller":
+		if !is_tree_root:
+			return null
+		#return find_child()
+	
+	if property == "_camera_point":
+		if !is_tree_root:
+			return null
+		return find_child("?oint")
+	
 	return property_get_revert(property)
 #endregion

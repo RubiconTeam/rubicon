@@ -69,6 +69,9 @@ var _level_3d : RubiconLevel3D
 var _override_note_database : RubiconLevelNoteDatabase
 var _internal_note_database : Dictionary[StringName, RubiconLevelNoteMetadata]
 
+signal note_press(id:StringName)
+signal note_release(id:StringName)
+
 func _init() -> void:
 	set_process_internal(true)
 

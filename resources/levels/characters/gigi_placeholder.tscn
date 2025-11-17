@@ -6,9 +6,20 @@
 
 [sub_resource type="Animation" id="Animation_4tnaj"]
 length = 0.001
+tracks/0/type = "animation"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite/SpriteAnimationPlayer")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"clips": PackedStringArray("gigi_placeholder_library/idle"),
+"times": PackedFloat32Array(0)
+}
 
 [sub_resource type="Animation" id="Animation_ojfnf"]
 resource_name = "dance_idle"
+length = 0.3334
 tracks/0/type = "animation"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -22,19 +33,7 @@ tracks/0/keys = {
 
 [sub_resource type="Animation" id="Animation_rs2io"]
 resource_name = "sing_down"
-tracks/0/type = "animation"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("Sprite/SpriteAnimationPlayer")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"clips": PackedStringArray("gigi_placeholder_library/down"),
-"times": PackedFloat32Array(0)
-}
-
-[sub_resource type="Animation" id="Animation_bxco1"]
-resource_name = "sing_down"
+length = 0.1666
 tracks/0/type = "animation"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -48,6 +47,7 @@ tracks/0/keys = {
 
 [sub_resource type="Animation" id="Animation_5ui0e"]
 resource_name = "sing_left"
+length = 0.1666
 tracks/0/type = "animation"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -61,6 +61,7 @@ tracks/0/keys = {
 
 [sub_resource type="Animation" id="Animation_s0343"]
 resource_name = "sing_right"
+length = 0.1666
 tracks/0/type = "animation"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -74,6 +75,7 @@ tracks/0/keys = {
 
 [sub_resource type="Animation" id="Animation_pp1a3"]
 resource_name = "sing_up"
+length = 0.1666
 tracks/0/type = "animation"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -85,26 +87,39 @@ tracks/0/keys = {
 "times": PackedFloat32Array(0)
 }
 
+[sub_resource type="Animation" id="Animation_bxco1"]
+resource_name = "miss"
+length = 0.25
+tracks/0/type = "animation"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite/SpriteAnimationPlayer")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"clips": PackedStringArray("gigi_placeholder_library/miss"),
+"times": PackedFloat32Array(0)
+}
+
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_bxco1"]
 _data = {
 &"RESET": SubResource("Animation_4tnaj"),
 &"dance_idle": SubResource("Animation_ojfnf"),
+&"miss": SubResource("Animation_bxco1"),
 &"sing_down": SubResource("Animation_rs2io"),
-&"sing_down_alt": SubResource("Animation_bxco1"),
 &"sing_left": SubResource("Animation_5ui0e"),
 &"sing_right": SubResource("Animation_s0343"),
 &"sing_up": SubResource("Animation_pp1a3")
 }
 
-[node name="GigiPlaceholder" type="Node2D"]
+[node name="GigiPlaceholder" type="Node2D" node_paths=PackedStringArray("anim_player")]
 script = ExtResource("1_snahq")
-_note_controller_path = null
-_anim_player_path = NodePath("RootAnimationPlayer")
+anim_player = NodePath("RootAnimationPlayer")
 animations = Dictionary[StringName, StringName]({
-&"miss_down": &"",
-&"miss_left": &"",
-&"miss_right": &"",
-&"miss_up": &"",
+&"miss_down": &"miss",
+&"miss_left": &"miss",
+&"miss_right": &"miss",
+&"miss_up": &"miss",
 &"sing_down": &"sing_down",
 &"sing_left": &"sing_left",
 &"sing_right": &"sing_right",
@@ -117,7 +132,6 @@ position = Vector2(36.000008, -390)
 scale = Vector2(5, 5)
 sprite_frames = ExtResource("2_5ui0e")
 animation = &"idle"
-frame = 3
 
 [node name="SpriteAnimationPlayer" type="AnimationPlayer" parent="Sprite"]
 libraries = {
