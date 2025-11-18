@@ -11,11 +11,13 @@ class_name RubiconSimpleCharacter2D
 	set(value):
 		anim_player = value
 		notify_property_list_changed()
+		update_configuration_warnings()
 
 var note_controller:RubiconLevelNoteController:
 	get():
 		if note_controller_path.is_empty() or note_controller_path == null:
 			return null
+		update_configuration_warnings()
 		return get_node(note_controller_path)
 var note_controller_path:NodePath
 
@@ -23,6 +25,7 @@ var camera_point:Marker2D:
 	get():
 		if camera_point_path.is_empty() or camera_point_path == null:
 			return null
+		update_configuration_warnings()
 		return get_node(camera_point_path)
 var camera_point_path:NodePath
 var camera_point_offset:Vector2
@@ -38,13 +41,13 @@ func disconnect_note_controller() -> void:
 	if note_controller != null:
 		note_controller.disconnect("note_press", note_press)
 
-func note_press() -> void:
-	pass
+func note_press(id:StringName) -> void:
+	sing(id)
 
 func dance() -> void:
 	pass
 
-func sing() -> void:
+func sing(anim:StringName) -> void:
 	pass
 
 func play(anim_name:StringName, override_dance:bool = false, override_sing:bool = false, force:bool = true, warn_missing_animation:bool = false) -> void:
@@ -101,6 +104,11 @@ var anim_player_list:PackedStringArray:
 			return anims
 		return [&"None"]
 
+@export_storage var handlers:Array[StringName] = [&"mania"]
+var _new_handler_name:StringName = &""
+var _make_handler:Callable = make_handler
+var _remove_handler:Callable = make_handler
+
 func _get_property_list() -> Array[Dictionary]:
 	var properties:Array[Dictionary]
 	
@@ -126,39 +134,85 @@ func _get_property_list() -> Array[Dictionary]:
 			type = TYPE_VECTOR2,
 			usage = PROPERTY_USAGE_DEFAULT
 		})
-	
+		
 	properties.append({
-		name = &"Animation Data",
+		name = &"Animation Setup",
 		type = TYPE_NIL,
-		usage = PROPERTY_USAGE_CATEGORY | PROPERTY_USAGE_EDITOR
+		usage = PROPERTY_USAGE_CATEGORY
+	})
+		
+	properties.append({
+		name = &"_make_handler",
+		type = TYPE_CALLABLE,
+		hint = PROPERTY_HINT_TOOL_BUTTON,
+		usage = PROPERTY_USAGE_EDITOR,
+		hint_string = "Make new handler,Add"
 	})
 	
-	if anim_player != null:
-		properties.append({
-			name = &"Mania Animation Data",
-			type = TYPE_NIL,
-			usage = PROPERTY_USAGE_GROUP
-		})
-		
-		properties.append_array(
-			[{
-			name = &"Sing",
-			type = TYPE_NIL,
-			usage = PROPERTY_USAGE_SUBGROUP,
-			hint_string = "sing_"
-			}] + get_anim_properties_from_array(directions, "sing_")
+	properties.append({
+		name = &"_new_handler_name",
+		type = TYPE_STRING_NAME,
+		hint = PROPERTY_HINT_TYPE_STRING,
+		usage = PROPERTY_USAGE_EDITOR
+	})
+	
+	if anim_player != null and !handlers.is_empty():
+		for handler:StringName in handlers:
+			properties.append({
+				name = handler.capitalize(),
+				type = TYPE_NIL,
+				usage = PROPERTY_USAGE_CATEGORY
+			})
+			
+			if handler != &"mania":
+				properties.append({
+					name = &"_remove_handler_"+handler,
+					type = TYPE_CALLABLE,
+					hint = PROPERTY_HINT_TOOL_BUTTON,
+					usage = PROPERTY_USAGE_EDITOR,
+					hint_string = "Remove handler,Remove"
+				})
+			
+			properties.append_array([{
+				name = &"Sing",
+				type = TYPE_NIL,
+				usage = PROPERTY_USAGE_SUBGROUP,
+				hint_string = "sing_"
+				}] + get_anim_properties_from_array(directions, "sing_")
+			)
+			
+			properties.append_array([{
+				name = &"Miss",
+				type = TYPE_NIL,
+				usage = PROPERTY_USAGE_SUBGROUP,
+				hint_string = "miss_"
+				}] + get_anim_properties_from_array(directions, "miss_")
 			)
 		
-		properties.append_array(
-			[{
-			name = &"Miss",
-			type = TYPE_NIL,
-			usage = PROPERTY_USAGE_SUBGROUP,
-			hint_string = "miss_"
-			}] + get_anim_properties_from_array(directions, "miss_")
-			)
+		if properties != null:
+			properties.append({
+				name = "",
+				type = TYPE_NIL,
+				usage = PROPERTY_USAGE_GROUP
+			})
+	elif handlers.is_empty():
+		handlers.append(&"mania")
+		notify_property_list_changed()
 	
 	return properties
+
+func make_handler() -> void:
+	if handlers.find(_new_handler_name) != -1 or _new_handler_name.is_empty():
+		return
+	
+	handlers.append(_new_handler_name)
+	_new_handler_name = &""
+	notify_property_list_changed()
+
+func remove_handler(handler_name:StringName) -> void:
+	var handler_idx:int = handlers.find(handler_name)
+	handlers.pop_at(handler_idx)
+	notify_property_list_changed()
 
 func get_anim_properties_from_array(array:PackedStringArray, prefix:StringName) -> Array[Dictionary]:
 	var properties:Array[Dictionary]
@@ -185,6 +239,12 @@ func _get(property: StringName) -> Variant:
 	match property:
 		&"_note_controller":
 			return note_controller_path
+	
+	if property.begins_with("_remove_handler_"):
+		var split_name:PackedStringArray = property.split("_", false, 2)
+		print(split_name)
+		var callable = Callable(self, "remove_handler").bind(split_name[2])
+		return callable
 	
 	return null
 
@@ -214,46 +274,47 @@ func _set(property: StringName, value: Variant) -> bool:
 				return true
 			camera_point_path = value
 			return true
-		&"camera_point_offset":
-			if value == null:
-				
-				return true
+		&"_camera_point_offset":
+			camera_point_offset = value
+			return true
+		#&"_remove_handler":
+			#make_handler()
+			#return true
 	
 	return false
 
 func _property_can_revert(property: StringName) -> bool:
 	if property.begins_with("sing_") or property.begins_with("miss_"):
-		if get(property).to_lower() == "none":
+		if get(property).to_lower() == &"none":
 			return false
 		return true
 	
-	if property == "_note_controller" and (note_controller_path != null or !note_controller_path.is_empty()):
+	if property == &"_note_controller" and (note_controller_path != null or !note_controller_path.is_empty()):
 		return true
 	
 	return false
 
 func _property_get_revert(property: StringName) -> Variant:
 	if property.begins_with("sing_") or property.begins_with("miss_"):
-		var split_property:PackedStringArray = property.split("_")
-		var dir_idx:int = directions.find(split_property[1])
+		var dir_idx:int = directions.find(property.get_slice("_", 1))
 		var direction:StringName = directions[dir_idx]
-		var anim:StringName = "None"
+		var anim:StringName = &"None"
 		for _anim:StringName in anim_player_list:
 			var anim_lower:StringName = _anim.to_lower()
-			if anim_lower.contains(direction) and anim_lower.contains(split_property[0]):
+			if anim_lower.contains(direction) and anim_lower.contains(property.get_slice("_", 0)):
 				anim = _anim
 				break
 		return anim
 	
-	if property == "_note_controller":
+	if property == &"_note_controller":
 		if !is_tree_root:
 			return null
 		#return find_child()
 	
-	if property == "_camera_point":
+	if property == &"_camera_point":
 		if !is_tree_root:
 			return null
-		return find_child("?oint")
+		return find_child("*oint")
 	
 	return property_get_revert(property)
 #endregion

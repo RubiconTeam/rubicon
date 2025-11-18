@@ -31,6 +31,20 @@ tracks/0/keys = {
 "times": PackedFloat32Array(0)
 }
 
+[sub_resource type="Animation" id="Animation_bxco1"]
+resource_name = "miss"
+length = 0.25
+tracks/0/type = "animation"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite/SpriteAnimationPlayer")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"clips": PackedStringArray("gigi_placeholder_library/miss"),
+"times": PackedFloat32Array(0)
+}
+
 [sub_resource type="Animation" id="Animation_rs2io"]
 resource_name = "sing_down"
 length = 0.1666
@@ -84,20 +98,6 @@ tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
 "clips": PackedStringArray("gigi_placeholder_library/up"),
-"times": PackedFloat32Array(0)
-}
-
-[sub_resource type="Animation" id="Animation_bxco1"]
-resource_name = "miss"
-length = 0.25
-tracks/0/type = "animation"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("Sprite/SpriteAnimationPlayer")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"clips": PackedStringArray("gigi_placeholder_library/miss"),
 "times": PackedFloat32Array(0)
 }
 
