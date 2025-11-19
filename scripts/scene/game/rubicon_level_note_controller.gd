@@ -16,6 +16,7 @@ class_name RubiconLevelNoteController extends Control
 		_reset_note_database()
 
 @export var autoplay : bool = false
+@export var preview_as_autoplay : bool = true
 @export var inputs : RubiconLevelNoteInputMap
 
 @export_group("Performance", "performance_")
@@ -69,8 +70,7 @@ var _level_3d : RubiconLevel3D
 var _override_note_database : RubiconLevelNoteDatabase
 var _internal_note_database : Dictionary[StringName, RubiconLevelNoteMetadata]
 
-signal note_press(id:StringName)
-signal note_release(id:StringName)
+signal note_hit(id:StringName, rating:RubiconLevelNoteHitResult.Judgment)
 
 func _init() -> void:
 	set_process_internal(true)

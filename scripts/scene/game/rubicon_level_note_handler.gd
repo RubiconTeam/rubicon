@@ -125,6 +125,8 @@ func hit_note(index : int, time_when_hit : float, hit_type : RubiconLevelNoteHit
 			rating = ratings[i]
 			break
 	
+	get_controller().note_hit.emit(get_unique_id(), rating)
+	
 	result.scoring_rating = rating
 	
 	var note_type : StringName = data[index].type
