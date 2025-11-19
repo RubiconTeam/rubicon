@@ -13,13 +13,14 @@ class_name RubiconSimpleCharacter2D
 		notify_property_list_changed()
 		update_configuration_warnings()
 
-var note_controller:RubiconLevelNoteController:
-	get():
-		if note_controller_path.is_empty() or note_controller_path == null:
-			return null
+@export var note_controller:RubiconLevelNoteController:
+	set(value):
+		note_controller = value
+		notify_property_list_changed()
 		update_configuration_warnings()
-		return get_node(note_controller_path)
-var note_controller_path:NodePath
+		
+		if note_controller != null:
+			note_controller.connect("note_hit", note_hit)
 
 var camera_point:Marker2D:
 	get():
@@ -27,30 +28,26 @@ var camera_point:Marker2D:
 			return null
 		update_configuration_warnings()
 		return get_node(camera_point_path)
+
 var camera_point_path:NodePath
 var camera_point_offset:Vector2
 
 var dancing:bool
 var singing:bool
 
-func connect_note_controller() -> void:
-	if note_controller != null:
-		note_controller.connect("note_press", note_press)
-
-func disconnect_note_controller() -> void:
-	if note_controller != null:
-		note_controller.disconnect("note_press", note_press)
-
-func note_press(id:StringName) -> void:
-	sing(id)
+func note_hit(id:StringName, rating:RubiconLevelNoteHitResult.Judgment) -> void:
+	sing(animations[anim_aliases[id]])
 
 func dance() -> void:
-	pass
+	if singing:
+		return
 
 func sing(anim:StringName) -> void:
-	pass
+	singing = true
+	play(anim, true)
 
-func play(anim_name:StringName, override_dance:bool = false, override_sing:bool = false, force:bool = true, warn_missing_animation:bool = false) -> void:
+# will work on properties and overriding n shit later
+func play(anim_name:StringName, force:bool = true, warn_missing_animation:bool = false) -> void:
 	if anim_player == null:
 		printerr("Animation Player is null in character " + scene_file_path.get_file())
 		return
@@ -58,9 +55,6 @@ func play(anim_name:StringName, override_dance:bool = false, override_sing:bool 
 	if !anim_player.has_animation(anim_name):
 		if warn_missing_animation:
 			printerr('No animation "'+anim_name+'" found in character: ' + scene_file_path.get_file())
-		return
-	
-	if ((singing and !override_sing) or (dancing and !override_dance)):
 		return
 	
 	if anim_player.is_playing() and !force:
@@ -85,7 +79,7 @@ func _get_configuration_warnings() -> PackedStringArray:
 	if anim_player == null:
 		warnings.append(tr("No root animation player assigned. Make sure to assign one under the character's properties"))
 	
-	if !is_tree_root and (note_controller == null or note_controller_path.is_empty()):
+	if !is_tree_root and note_controller == null:
 		warnings.append(tr("Characters require a note controller to work. Make sure to assign one under the character's properties"))
 	
 	if !is_tree_root and (camera_point == null or camera_point_path.is_empty()):
@@ -96,6 +90,7 @@ func _get_configuration_warnings() -> PackedStringArray:
 
 @export_storage var animations:Dictionary[StringName,StringName] = {}
 var directions:Array[StringName] = [&"left", &"down", &"up", &"right"]
+var anim_aliases:Dictionary[StringName, StringName] = {"mania_lane0": "sing_left", "mania_lane1": "sing_down", "mania_lane2": "sing_up", "mania_lane3": "sing_right"}
 var anim_player_list:PackedStringArray:
 	get():
 		if anim_player != null:
@@ -113,14 +108,6 @@ func _get_property_list() -> Array[Dictionary]:
 	var properties:Array[Dictionary]
 	
 	if !is_tree_root:
-		properties.append({
-			name = &"_note_controller",
-			type = TYPE_NODE_PATH,
-			hint = PROPERTY_HINT_NODE_PATH_VALID_TYPES,
-			hint_string = "RubiconLevelNoteController", 
-			usage = PROPERTY_USAGE_DEFAULT
-		})
-		
 		properties.append({
 			name = &"_camera_point",
 			type = TYPE_NODE_PATH,
@@ -164,14 +151,13 @@ func _get_property_list() -> Array[Dictionary]:
 				usage = PROPERTY_USAGE_CATEGORY
 			})
 			
-			if handler != &"mania":
-				properties.append({
-					name = &"_remove_handler_"+handler,
-					type = TYPE_CALLABLE,
-					hint = PROPERTY_HINT_TOOL_BUTTON,
-					usage = PROPERTY_USAGE_EDITOR,
-					hint_string = "Remove handler,Remove"
-				})
+			properties.append({
+				name = &"_remove_handler_"+handler,
+				type = TYPE_CALLABLE,
+				hint = PROPERTY_HINT_TOOL_BUTTON,
+				usage = PROPERTY_USAGE_EDITOR,
+				hint_string = "Remove handler,Remove"
+			})
 			
 			properties.append_array([{
 				name = &"Sing",
@@ -236,13 +222,8 @@ func _get(property: StringName) -> Variant:
 			return animations[property]
 		return property_get_revert(property)
 	
-	match property:
-		&"_note_controller":
-			return note_controller_path
-	
 	if property.begins_with("_remove_handler_"):
 		var split_name:PackedStringArray = property.split("_", false, 2)
-		print(split_name)
 		var callable = Callable(self, "remove_handler").bind(split_name[2])
 		return callable
 	
@@ -257,26 +238,16 @@ func _set(property: StringName, value: Variant) -> bool:
 		animations[property] = value
 		return true
 	
-	match property:
-		&"_note_controller":
-			if note_controller != null:
-				disconnect_note_controller()
-			
-			if value == null:
-				note_controller_path = ""
-				return true
-			note_controller_path = value
-			connect_note_controller()
-			return true
-		&"_camera_point":
-			if value == null:
-				camera_point_path = ""
-				return true
-			camera_point_path = value
-			return true
-		&"_camera_point_offset":
-			camera_point_offset = value
-			return true
+	#match property:
+		#&"_camera_point":
+			#if value == null:
+				#camera_point_path = ""
+				#return true
+			#camera_point_path = value
+			#return true
+		#&"_camera_point_offset":
+			#camera_point_offset = value
+			#return true
 		#&"_remove_handler":
 			#make_handler()
 			#return true
@@ -289,8 +260,8 @@ func _property_can_revert(property: StringName) -> bool:
 			return false
 		return true
 	
-	if property == &"_note_controller" and (note_controller_path != null or !note_controller_path.is_empty()):
-		return true
+	#if property == &"_note_controller" and (note_controller_path != null or !note_controller_path.is_empty()):
+		#return true
 	
 	return false
 
@@ -306,10 +277,10 @@ func _property_get_revert(property: StringName) -> Variant:
 				break
 		return anim
 	
-	if property == &"_note_controller":
-		if !is_tree_root:
-			return null
-		#return find_child()
+	#if property == &"_note_controller":
+		#if !is_tree_root:
+			#return null
+		##return find_child()
 	
 	if property == &"_camera_point":
 		if !is_tree_root:

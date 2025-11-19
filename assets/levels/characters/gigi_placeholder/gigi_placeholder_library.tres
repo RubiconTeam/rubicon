@@ -12,7 +12,7 @@ tracks/0/loop_wrap = true
 tracks/0/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(0),
-"update": 0,
+"update": 1,
 "values": ["down"]
 }
 tracks/1/type = "value"
@@ -40,7 +40,7 @@ tracks/0/loop_wrap = true
 tracks/0/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(0),
-"update": 0,
+"update": 1,
 "values": ["idle"]
 }
 tracks/1/type = "value"
@@ -68,7 +68,7 @@ tracks/0/loop_wrap = true
 tracks/0/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(0),
-"update": 0,
+"update": 1,
 "values": ["left"]
 }
 tracks/1/type = "value"
@@ -96,7 +96,7 @@ tracks/0/loop_wrap = true
 tracks/0/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(0),
-"update": 0,
+"update": 1,
 "values": ["miss"]
 }
 tracks/1/type = "value"
@@ -124,7 +124,7 @@ tracks/0/loop_wrap = true
 tracks/0/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(0),
-"update": 0,
+"update": 1,
 "values": ["right"]
 }
 tracks/1/type = "value"
@@ -152,7 +152,7 @@ tracks/0/loop_wrap = true
 tracks/0/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(0),
-"update": 0,
+"update": 1,
 "values": ["up"]
 }
 tracks/1/type = "value"
