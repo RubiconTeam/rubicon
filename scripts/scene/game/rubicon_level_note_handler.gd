@@ -125,8 +125,6 @@ func hit_note(index : int, time_when_hit : float, hit_type : RubiconLevelNoteHit
 			rating = ratings[i]
 			break
 	
-	get_controller().note_hit.emit(get_unique_id(), rating)
-	
 	result.scoring_rating = rating
 	
 	var note_type : StringName = data[index].type
@@ -165,14 +163,15 @@ func _process(delta: float) -> void:
 		note_spawn_end += 1
 	
 	# Handle rewinding
-	while _has_passed_last_note(millisecond_position):
-		_roll_hit_back()
-	
-	if note_hit_index < data.size():
-		if _has_passed_current_long_note(millisecond_position) and results[note_hit_index] != null:
-			results[note_hit_index].reset(RubiconLevelNoteHitResult.Hit.HIT_NONE)
-		elif _is_inside_of_incomplete_note(millisecond_position):
-			_reset_to_incomplete_note()
+	if get_controller().autoplay:
+		while _has_passed_last_note(millisecond_position):
+			_roll_hit_back()
+		
+		if note_hit_index < data.size():
+			if _has_passed_current_long_note(millisecond_position) and results[note_hit_index] != null:
+				results[note_hit_index].reset(RubiconLevelNoteHitResult.Hit.HIT_NONE)
+			elif _is_inside_of_incomplete_note(millisecond_position):
+				_reset_to_incomplete_note()
 	
 	while note_spawn_start > 0 and data[note_spawn_start - 1].get_millisecond_end_position() - millisecond_position > spawning_bound_minimum:
 		note_spawn_start -= 1
@@ -203,8 +202,8 @@ func _process(delta: float) -> void:
 		hit_note(note_hit_index, data[note_hit_index].get_millisecond_end_position(), RubiconLevelNoteHitResult.Hit.HIT_COMPLETE)
 		note_hit_index += 1
 	
-	while not get_controller().autoplay and note_hit_index >= data.size() and data[note_hit_index].get_millisecond_start_position() - millisecond_position < -settings.judgment_window_bad and (results[note_hit_index] == null or results[note_hit_index].scoring_hit == RubiconLevelNoteHitResult.Hit.HIT_NONE):
-		hit_note(note_hit_index, millisecond_position, RubiconLevelNoteHitResult.Hit.HIT_COMPLETE) # TODO: Add more forgiving hold notes
+	while not get_controller().autoplay and note_hit_index < data.size() and data[note_hit_index].get_millisecond_start_position() - millisecond_position < -settings.judgment_window_bad and (results[note_hit_index] == null or results[note_hit_index].scoring_hit == RubiconLevelNoteHitResult.Hit.HIT_NONE):
+		hit_note(note_hit_index, data[note_hit_index].get_millisecond_start_position() + settings.judgment_window_bad + 1, RubiconLevelNoteHitResult.Hit.HIT_COMPLETE) # TODO: Add more forgiving hold notes
 		note_hit_index += 1
 
 func _has_passed_last_note(millisecond_position : float) -> bool:
