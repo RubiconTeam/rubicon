@@ -1,26 +1,25 @@
 @tool
-extends Node2D
-class_name RubiconSimpleCharacter2D
+class_name RubiconSimpleCharacter2D extends Node2D
 
-@export_group("Character Data")
+@export var steps_until_idle : int = 4
 @export var should_dance:bool = true
 @export var should_sing:bool = true
 
-@export_group("References")
-@export var anim_player:AnimationPlayer:
+@export_group("References", "reference_")
+@export var reference_animation_player:AnimationPlayer:
 	set(value):
-		anim_player = value
+		reference_animation_player = value
 		notify_property_list_changed()
 		update_configuration_warnings()
 
-@export var note_controller:RubiconLevelNoteController:
+@export var reference_note_controller : RubiconLevelNoteController:
 	set(value):
-		note_controller = value
+		reference_note_controller = value
 		notify_property_list_changed()
 		update_configuration_warnings()
 		
-		if note_controller != null:
-			note_controller.connect("note_hit", note_hit)
+		if reference_note_controller != null:
+			reference_note_controller.connect("note_hit", note_hit)
 
 var camera_point:Marker2D:
 	get():
@@ -35,7 +34,57 @@ var camera_point_offset:Vector2
 var dancing:bool
 var singing:bool
 
+var _results_cache : Array[RubiconLevelNoteHitResult]
+
+func _should_process() -> bool:
+	return reference_note_controller != null and reference_note_controller.get_level_clock() != null
+
+func _process(delta: float) -> void:
+	if not _should_process():
+		return
+	
+	var current_result : RubiconLevelNoteHitResult
+	var clock : RubiconLevelClock = reference_note_controller.get_level_clock()
+	for handler_id in reference_note_controller.note_handlers:
+		var handler : RubiconLevelNoteHandler = reference_note_controller.note_handlers[handler_id]
+		var handler_result : RubiconLevelNoteHitResult = handler.results[handler.note_hit_index] # Get current note holding
+		if handler.note_hit_index > 0 and (handler_result == null or handler_result.scoring_hit == RubiconLevelNoteHitResult.Hit.HIT_NONE):
+			handler_result = handler.results[handler.note_hit_index - 1] # Get last note hit
+		
+		# Invalid
+		if handler_result == null or handler_result.time_when_hit > clock.time_milliseconds:
+			continue
+
+		if current_result == null or handler_result.time_when_hit > current_result.time_when_hit:
+			current_result = handler_result
+	
+	# Idling
+	if current_result == null:
+		_handle_dancing()
+		return
+
+	match current_result.scoring_hit:
+		RubiconLevelNoteHitResult.Hit.HIT_NONE:
+			_handle_dancing()
+		RubiconLevelNoteHitResult.Hit.HIT_INCOMPLETE:
+			_handle_singing(current_result)
+		RubiconLevelNoteHitResult.Hit.HIT_COMPLETE:
+			_handle_singing(current_result)
+
+			var data : RubiChartNote = current_result.handler.data[current_result.data_index]
+			var millisecond_to_idle_at : float = RubiconTimeChange.get_millisecond_at_step(clock.get_time_changes(), RubiconTimeChange.get_step_at_millisecond(clock.get_time_changes(), data.get_millisecond_end_position()) + steps_until_idle)
+			if current_result.handler.data[current_result.data_index].get_millisecond_end_position() > millisecond_to_idle_at:
+				_handle_dancing()
+
+func _handle_dancing() -> void:
+	pass
+
+func _handle_singing(current_result : RubiconLevelNoteHitResult) -> void:
+	var current_id : StringName = current_result.handler.get_unique_id()
+	reference_animation_player.current_animation = animations[anim_aliases[current_id]]
+
 func note_hit(id:StringName, rating:RubiconLevelNoteHitResult.Judgment) -> void:
+	return
 	sing(animations[anim_aliases[id]])
 
 func dance() -> void:
@@ -48,20 +97,20 @@ func sing(anim:StringName) -> void:
 
 # will work on properties and overriding n shit later
 func play(anim_name:StringName, force:bool = true, warn_missing_animation:bool = false) -> void:
-	if anim_player == null:
+	if reference_animation_player == null:
 		printerr("Animation Player is null in character " + scene_file_path.get_file())
 		return
 	
-	if !anim_player.has_animation(anim_name):
+	if !reference_animation_player.has_animation(anim_name):
 		if warn_missing_animation:
 			printerr('No animation "'+anim_name+'" found in character: ' + scene_file_path.get_file())
 		return
 	
-	if anim_player.is_playing() and !force:
+	if reference_animation_player.is_playing() and !force:
 		return
 	
-	anim_player.play(anim_name)
-	anim_player.seek(0.0)
+	reference_animation_player.play(anim_name)
+	reference_animation_player.seek(0.0)
 
 #region Custom Property Handling
 var is_tree_root:bool:
@@ -76,10 +125,10 @@ var is_tree_root:bool:
 func _get_configuration_warnings() -> PackedStringArray:
 	var warnings:PackedStringArray
 	
-	if anim_player == null:
+	if reference_animation_player == null:
 		warnings.append(tr("No root animation player assigned. Make sure to assign one under the character's properties"))
 	
-	if !is_tree_root and note_controller == null:
+	if !is_tree_root and reference_note_controller == null:
 		warnings.append(tr("Characters require a note controller to work. Make sure to assign one under the character's properties"))
 	
 	if !is_tree_root and (camera_point == null or camera_point_path.is_empty()):
@@ -93,9 +142,9 @@ var directions:Array[StringName] = [&"left", &"down", &"up", &"right"]
 var anim_aliases:Dictionary[StringName, StringName] = {"mania_lane0": "sing_left", "mania_lane1": "sing_down", "mania_lane2": "sing_up", "mania_lane3": "sing_right"}
 var anim_player_list:PackedStringArray:
 	get():
-		if anim_player != null:
+		if reference_animation_player != null:
 			var anims:PackedStringArray = [&"None"]
-			anims.append_array(anim_player.get_animation_list())
+			anims.append_array(reference_animation_player.get_animation_list())
 			return anims
 		return [&"None"]
 
@@ -143,7 +192,7 @@ func _get_property_list() -> Array[Dictionary]:
 		usage = PROPERTY_USAGE_EDITOR
 	})
 	
-	if anim_player != null and !handlers.is_empty():
+	if reference_animation_player != null and !handlers.is_empty():
 		for handler:StringName in handlers:
 			properties.append({
 				name = handler.capitalize(),

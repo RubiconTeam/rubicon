@@ -112,9 +112,9 @@ _data = {
 &"sing_up": SubResource("Animation_pp1a3")
 }
 
-[node name="GigiPlaceholder" type="Node2D" node_paths=PackedStringArray("anim_player")]
+[node name="GigiPlaceholder" type="Node2D" node_paths=PackedStringArray("reference_animation_player")]
 script = ExtResource("1_snahq")
-anim_player = NodePath("RootAnimationPlayer")
+reference_animation_player = NodePath("RootAnimationPlayer")
 animations = Dictionary[StringName, StringName]({
 &"miss_down": &"miss",
 &"miss_left": &"miss",
