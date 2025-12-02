@@ -148,10 +148,10 @@ var anim_player_list:PackedStringArray:
 			return anims
 		return [&"None"]
 
-@export_storage var handlers:Array[StringName] = [&"mania"]
-var _new_handler_name:StringName = &""
-var _make_handler:Callable = make_handler
-var _remove_handler:Callable = make_handler
+@export_storage var modes:Array[StringName] = [&"mania"]
+var _new_mode_name:StringName = &""
+var _add_mode:Callable = add_mode
+var _remove_mode:Callable = remove_mode
 
 func _get_property_list() -> Array[Dictionary]:
 	var properties:Array[Dictionary]
@@ -170,83 +170,77 @@ func _get_property_list() -> Array[Dictionary]:
 			type = TYPE_VECTOR2,
 			usage = PROPERTY_USAGE_DEFAULT
 		})
-		
-	properties.append({
-		name = &"Animation Setup",
-		type = TYPE_NIL,
-		usage = PROPERTY_USAGE_CATEGORY
-	})
-		
-	properties.append({
-		name = &"_make_handler",
-		type = TYPE_CALLABLE,
-		hint = PROPERTY_HINT_TOOL_BUTTON,
-		usage = PROPERTY_USAGE_EDITOR,
-		hint_string = "Make new handler,Add"
-	})
 	
-	properties.append({
-		name = &"_new_handler_name",
-		type = TYPE_STRING_NAME,
-		hint = PROPERTY_HINT_TYPE_STRING,
-		usage = PROPERTY_USAGE_EDITOR
-	})
-	
-	if reference_animation_player != null and !handlers.is_empty():
-		for handler:StringName in handlers:
-			properties.append({
-				name = handler.capitalize(),
-				type = TYPE_NIL,
-				usage = PROPERTY_USAGE_CATEGORY
-			})
+	if reference_animation_player != null:
+		properties.append({
+			name = &"Animation Setup",
+			type = TYPE_NIL,
+			usage = PROPERTY_USAGE_CATEGORY
+		})
 			
-			properties.append({
-				name = &"_remove_handler_"+handler,
-				type = TYPE_CALLABLE,
-				hint = PROPERTY_HINT_TOOL_BUTTON,
-				usage = PROPERTY_USAGE_EDITOR,
-				hint_string = "Remove handler,Remove"
-			})
-			
-			properties.append_array([{
-				name = &"Sing",
-				type = TYPE_NIL,
-				usage = PROPERTY_USAGE_SUBGROUP,
-				hint_string = "sing_"
-				}] + get_anim_properties_from_array(directions, "sing_")
-			)
-			
-			properties.append_array([{
-				name = &"Miss",
-				type = TYPE_NIL,
-				usage = PROPERTY_USAGE_SUBGROUP,
-				hint_string = "miss_"
-				}] + get_anim_properties_from_array(directions, "miss_")
-			)
+		properties.append({
+			name = &"_add_mode",
+			type = TYPE_CALLABLE,
+			hint = PROPERTY_HINT_TOOL_BUTTON,
+			usage = PROPERTY_USAGE_EDITOR,
+			hint_string = "Add New Game Mode,Add"
+		})
 		
-		if properties != null:
-			properties.append({
-				name = "",
-				type = TYPE_NIL,
-				usage = PROPERTY_USAGE_GROUP
-			})
-	elif handlers.is_empty():
-		handlers.append(&"mania")
-		notify_property_list_changed()
+		properties.append({
+			name = &"_new_mode_name",
+			type = TYPE_STRING_NAME,
+			hint = PROPERTY_HINT_TYPE_STRING,
+			usage = PROPERTY_USAGE_EDITOR
+		})
+	
+		if !modes.is_empty():
+			for mode:StringName in modes:
+				properties.append({
+					name = mode.capitalize(),
+					type = TYPE_NIL,
+					usage = PROPERTY_USAGE_CATEGORY
+				})
+				
+				properties.append({
+					name = &"_remove_mode_"+mode,
+					type = TYPE_CALLABLE,
+					hint = PROPERTY_HINT_TOOL_BUTTON,
+					usage = PROPERTY_USAGE_EDITOR,
+					hint_string = "Remove Game Mode,Remove"
+				})
+				
+				properties.append_array([{
+					name = &"Sing",
+					type = TYPE_NIL,
+					usage = PROPERTY_USAGE_SUBGROUP,
+					hint_string = "sing_"
+					}] + get_anim_properties_from_array(directions, "sing_")
+				)
+				
+				properties.append_array([{
+					name = &"Miss",
+					type = TYPE_NIL,
+					usage = PROPERTY_USAGE_SUBGROUP,
+					hint_string = "miss_"
+					}] + get_anim_properties_from_array(directions, "miss_")
+				)
+	#elif modes.is_empty():
+		#modes.append(&"mania")
+		#notify_property_list_changed()
 	
 	return properties
 
-func make_handler() -> void:
-	if handlers.find(_new_handler_name) != -1 or _new_handler_name.is_empty():
+func add_mode() -> void:
+	if modes.find(_new_mode_name) != -1 or _new_mode_name.is_empty():
 		return
 	
-	handlers.append(_new_handler_name)
-	_new_handler_name = &""
+	modes.append(_new_mode_name)
+	_new_mode_name = &""
 	notify_property_list_changed()
 
-func remove_handler(handler_name:StringName) -> void:
-	var handler_idx:int = handlers.find(handler_name)
-	handlers.pop_at(handler_idx)
+func remove_mode(mode_name:StringName) -> void:
+	var mode_idx:int = modes.find(mode_name)
+	modes.pop_at(mode_idx)
 	notify_property_list_changed()
 
 func get_anim_properties_from_array(array:PackedStringArray, prefix:StringName) -> Array[Dictionary]:
@@ -271,9 +265,9 @@ func _get(property: StringName) -> Variant:
 			return animations[property]
 		return property_get_revert(property)
 	
-	if property.begins_with("_remove_handler_"):
+	if property.begins_with("_remove_mode_"):
 		var split_name:PackedStringArray = property.split("_", false, 2)
-		var callable = Callable(self, "remove_handler").bind(split_name[2])
+		var callable = Callable(self, "remove_mode").bind(split_name[2])
 		return callable
 	
 	return null
@@ -286,21 +280,6 @@ func _set(property: StringName, value: Variant) -> bool:
 		
 		animations[property] = value
 		return true
-	
-	#match property:
-		#&"_camera_point":
-			#if value == null:
-				#camera_point_path = ""
-				#return true
-			#camera_point_path = value
-			#return true
-		#&"_camera_point_offset":
-			#camera_point_offset = value
-			#return true
-		#&"_remove_handler":
-			#make_handler()
-			#return true
-	
 	return false
 
 func _property_can_revert(property: StringName) -> bool:

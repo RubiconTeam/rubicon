@@ -1,0 +1,83 @@
+[gd_scene load_steps=3 format=3 uid="uid://cx83j7hvforsh"]
+
+[ext_resource type="Script" uid="uid://cywocjqc1ktkj" path="res://addons/rubicon/scripts/editor/make_character_dialog.gd" id="1_7i87s"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_yblr8"]
+font_size = 14
+font_color = Color(1, 1, 1, 0.6)
+
+[node name="ConfirmationDialog" type="ConfirmationDialog" node_paths=PackedStringArray("path_line_edit", "base_path_label", "path_validator")]
+oversampling_override = 1.0
+title = "New Character Scene"
+initial_position = 2
+size = Vector2i(480, 270)
+visible = true
+min_size = Vector2i(480, 240)
+content_scale_mode = 1
+ok_button_text = "Create"
+dialog_autowrap = true
+script = ExtResource("1_7i87s")
+path_line_edit = NodePath("Control/VBoxContainer/LineEdit")
+base_path_label = NodePath("Control/VBoxContainer/Label")
+path_validator = NodePath("Control/VBoxContainer/Panel/Panel/MarginContainer/Label")
+path_responses = Dictionary[StringName, String]({
+&"empty": "·  Scene name is empty.",
+&"exists": "·  File already exists.",
+&"valid": "·  Scene name is valid."
+})
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -49.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Control/VBoxContainer"]
+layout_mode = 2
+text = "Base path: "
+label_settings = SubResource("LabelSettings_yblr8")
+
+[node name="Label2" type="Label" parent="Control/VBoxContainer"]
+layout_mode = 2
+text = "Name: "
+
+[node name="LineEdit" type="LineEdit" parent="Control/VBoxContainer"]
+layout_mode = 2
+
+[node name="Panel" type="PanelContainer" parent="Control/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Panel" type="Panel" parent="Control/VBoxContainer/Panel"]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="Control/VBoxContainer/Panel/Panel"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+theme_override_constants/margin_left = 10
+
+[node name="Label" type="Label" parent="Control/VBoxContainer/Panel/Panel/MarginContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.972549, 0.18431373, 0.14509805, 1)
+text = "·  Scene name is empty."
+
+[connection signal="canceled" from="." to="." method="close_popup"]
+[connection signal="confirmed" from="." to="." method="_on_confirmed"]
+[connection signal="visibility_changed" from="." to="." method="close_popup"]
+[connection signal="text_changed" from="Control/VBoxContainer/LineEdit" to="." method="_text_changed"]
