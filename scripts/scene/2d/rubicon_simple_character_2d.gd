@@ -5,6 +5,20 @@ class_name RubiconSimpleCharacter2D extends Node2D
 @export var should_dance:bool = true
 @export var should_sing:bool = true
 
+enum CharacterHoldType {
+	NONE,
+	FREEZE,
+	REPEAT,
+	STEP_REPEAT,
+}
+
+@export var hold_type:CharacterHoldType = CharacterHoldType.FREEZE:
+	set(value):
+		hold_type = value
+		notify_property_list_changed()
+@export_storage var repeat_loop_point:float = 0.125
+@export_storage var step_time_value:float = 1
+
 @export_group("References", "reference_")
 @export var reference_animation_player:AnimationPlayer:
 	set(value):
@@ -31,10 +45,17 @@ var camera_point:Marker2D:
 var camera_point_path:NodePath
 var camera_point_offset:Vector2
 
-var dancing:bool
-var singing:bool
+enum CharacterState {
+	STATE_DANCING,
+	STATE_SINGING,
+	STATE_HOLDING,
+	STATE_OVERRIDE,
+}
+
+var state:CharacterState
 
 var _results_cache : Array[RubiconLevelNoteHitResult]
+var _last_time_when_hit:float
 
 func _should_process() -> bool:
 	return reference_note_controller != null and reference_note_controller.get_level_clock() != null
@@ -77,23 +98,54 @@ func _process(delta: float) -> void:
 				_handle_dancing()
 
 func _handle_dancing() -> void:
-	pass
+	return
+	state = CharacterState.STATE_DANCING
 
 func _handle_singing(current_result : RubiconLevelNoteHitResult) -> void:
+	if state == CharacterState.STATE_OVERRIDE:
+		return
+	
 	var current_id : StringName = current_result.handler.get_unique_id()
-	reference_animation_player.current_animation = animations[anim_aliases[current_id]]
+	var current_anim : StringName = animations[anim_aliases[current_id]]
+	var time_when_hit:float = current_result.time_when_hit
+	if _last_time_when_hit != time_when_hit:
+		reference_animation_player.current_animation = current_anim
+	
+	match current_result.scoring_hit:
+		RubiconLevelNoteHitResult.Hit.HIT_INCOMPLETE:
+			state = CharacterState.STATE_HOLDING
+			_handle_hold_animation(current_anim, time_when_hit)
+	
+		RubiconLevelNoteHitResult.Hit.HIT_COMPLETE:
+			state = CharacterState.STATE_SINGING
+			reference_animation_player.pause()
+			
+			var time_distance:float = (reference_note_controller.get_level_clock().time_milliseconds - time_when_hit) * 0.001 
+			if time_distance < reference_animation_player.current_animation_length:
+				reference_animation_player.seek(time_distance * reference_animation_player.speed_scale, true)
+	_last_time_when_hit = time_when_hit
+
+func _handle_hold_animation(anim:StringName, time_when_hit:float) -> void:
+	match hold_type:
+		CharacterHoldType.NONE:
+			return
+		CharacterHoldType.FREEZE:
+			var cur_anim:StringName = reference_animation_player.current_animation
+			if cur_anim != anim or reference_animation_player.current_animation_position > 0:
+				reference_animation_player.current_animation = anim
+				reference_animation_player.seek(0)
+				reference_animation_player.pause()
+		CharacterHoldType.REPEAT:
+			var time_distance:float = (reference_note_controller.get_level_clock().time_milliseconds - time_when_hit) * 0.001 
+			var anim_length:float = reference_animation_player.current_animation_length
+			var wrapped_time_distance:float = wrapf(time_distance, 0, repeat_loop_point if repeat_loop_point <= anim_length else anim_length)
+			reference_animation_player.seek(wrapped_time_distance * reference_animation_player.speed_scale, true)
 
 func note_hit(id:StringName, rating:RubiconLevelNoteHitResult.Judgment) -> void:
 	return
-	sing(animations[anim_aliases[id]])
 
 func dance() -> void:
-	if singing:
-		return
-
-func sing(anim:StringName) -> void:
-	singing = true
-	play(anim, true)
+	pass
 
 # will work on properties and overriding n shit later
 func play(anim_name:StringName, force:bool = true, warn_missing_animation:bool = false) -> void:
@@ -155,6 +207,21 @@ var _remove_mode:Callable = remove_mode
 
 func _get_property_list() -> Array[Dictionary]:
 	var properties:Array[Dictionary]
+	
+	match hold_type:
+		CharacterHoldType.REPEAT:
+			properties.append({
+				name = &"repeat_loop_point",
+				type = TYPE_FLOAT,
+				usage = PROPERTY_USAGE_EDITOR
+			})
+		CharacterHoldType.STEP_REPEAT:
+			properties.append({
+				name = &"step_time_value",
+				type = TYPE_FLOAT,
+				usage = PROPERTY_USAGE_EDITOR
+			})
+	
 	
 	if !is_tree_root:
 		properties.append({
@@ -291,6 +358,16 @@ func _property_can_revert(property: StringName) -> bool:
 	#if property == &"_note_controller" and (note_controller_path != null or !note_controller_path.is_empty()):
 		#return true
 	
+	#match property:
+		#&"repeat_loop_point":
+			#if repeat_loop_point == 0.125:
+				#return false
+			#return true
+		#&"step_time_value":
+			#if step_time_value == 1:
+				#return false
+			#return true
+	
 	return false
 
 func _property_get_revert(property: StringName) -> Variant:
@@ -310,10 +387,15 @@ func _property_get_revert(property: StringName) -> Variant:
 			#return null
 		##return find_child()
 	
-	if property == &"_camera_point":
-		if !is_tree_root:
-			return null
-		return find_child("*oint")
+	match property:
+		&"_camera_point":
+			if !is_tree_root:
+				return null
+			return find_child("*oint")
+		#&"repeat_loop_point":
+			#return 0.125
+		#&"step_time_value":
+			#return 1
 	
 	return property_get_revert(property)
 #endregion
