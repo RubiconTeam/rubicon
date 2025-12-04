@@ -57,11 +57,11 @@ var state:CharacterState
 var _results_cache : Array[RubiconLevelNoteHitResult]
 var _last_time_when_hit:float
 
-func _should_process() -> bool:
+func _valid_controller() -> bool:
 	return reference_note_controller != null and reference_note_controller.get_level_clock() != null
 
 func _process(delta: float) -> void:
-	if not _should_process():
+	if not _valid_controller():
 		return
 	
 	var current_result : RubiconLevelNoteHitResult
@@ -105,8 +105,8 @@ func _handle_singing(current_result : RubiconLevelNoteHitResult) -> void:
 	if state == CharacterState.STATE_OVERRIDE:
 		return
 	
-	var current_id : StringName = current_result.handler.get_unique_id()
-	var current_anim : StringName = animations[anim_aliases[current_id]]
+	var current_anim : StringName = get_anim_alias_from_result(current_result)
+	
 	var time_when_hit:float = current_result.time_when_hit
 	if _last_time_when_hit != time_when_hit:
 		reference_animation_player.current_animation = current_anim
@@ -164,6 +164,20 @@ func play(anim_name:StringName, force:bool = true, warn_missing_animation:bool =
 	reference_animation_player.play(anim_name)
 	reference_animation_player.seek(0.0)
 
+func get_anim_alias_from_result(result:RubiconLevelNoteHitResult) -> StringName:
+	var current_id : StringName = result.handler.get_unique_id()
+	var mode_aliases:Dictionary[StringName, StringName] = get(result.handler.get_mode_id().to_lower() + "_anim_aliases")
+	print(result.handler.get_mode_id().to_lower() + "_anim_aliases")
+	if mode_aliases == null or mode_aliases.is_empty():
+		printerr("Couldn't get animation alias list for mode: " + result.handler.get_mode_id().to_lower())
+		return &""
+	if !mode_aliases.has(current_id):
+		printerr("Couldn't find alias for animation: %s" % [current_id])
+		return &""
+	
+	var current_anim : StringName = animations[mode_aliases[current_id]]
+	return current_anim
+
 #region Custom Property Handling
 var is_tree_root:bool:
 	get():
@@ -173,6 +187,29 @@ var is_tree_root:bool:
 		if get_tree() != null and self == get_tree().edited_scene_root:
 			return true
 		return false
+
+@export_storage var animations:Dictionary[StringName,StringName] = {}
+var anim_player_list:PackedStringArray:
+	get():
+		if reference_animation_player != null:
+			var anims:PackedStringArray = [&"None"]
+			anims.append_array(reference_animation_player.get_animation_list())
+			return anims
+		return [&"None"]
+
+@export_storage var modes:Array[StringName] = [&"mania"]
+var _new_mode_name:StringName = &"":
+	set(value):
+		_new_mode_name = value.to_lower()
+var _add_mode:Callable = add_mode
+var _remove_mode:Callable = remove_mode
+var _add_animation_group:Callable = add_animation_group
+
+# Defaults for mania, as it is the targeted mode.
+@export_storage var mania_anim_aliases:Dictionary[StringName, StringName] = {"mania_lane0": "sing_left", "mania_lane1": "sing_down", "mania_lane2": "sing_up", "mania_lane3": "sing_right", "mania_lane0_miss": "miss_left", "mania_lane1_miss": "miss_down", "mania_lane2_miss": "miss_up", "mania_lane3_miss": "miss_right"}
+@export_storage var mania_anim_groups:Dictionary[StringName, int] = {"sing": 4}#, "miss": 4}
+# default 4k directions for anim predictions (for >4k you'll have to set them up yourself, i unfortunately cant predict your brain)
+var mania_directions:Array[StringName] = [&"left", &"down", &"up", &"right"]
 
 func _get_configuration_warnings() -> PackedStringArray:
 	var warnings:PackedStringArray
@@ -187,23 +224,6 @@ func _get_configuration_warnings() -> PackedStringArray:
 		warnings.append(tr("No camera point assigned. Cameras will ignore the character when supposed to aim at it."))
 	
 	return warnings
-
-
-@export_storage var animations:Dictionary[StringName,StringName] = {}
-var directions:Array[StringName] = [&"left", &"down", &"up", &"right"]
-var anim_aliases:Dictionary[StringName, StringName] = {"mania_lane0": "sing_left", "mania_lane1": "sing_down", "mania_lane2": "sing_up", "mania_lane3": "sing_right"}
-var anim_player_list:PackedStringArray:
-	get():
-		if reference_animation_player != null:
-			var anims:PackedStringArray = [&"None"]
-			anims.append_array(reference_animation_player.get_animation_list())
-			return anims
-		return [&"None"]
-
-@export_storage var modes:Array[StringName] = [&"mania"]
-var _new_mode_name:StringName = &""
-var _add_mode:Callable = add_mode
-var _remove_mode:Callable = remove_mode
 
 func _get_property_list() -> Array[Dictionary]:
 	var properties:Array[Dictionary]
@@ -273,27 +293,58 @@ func _get_property_list() -> Array[Dictionary]:
 					type = TYPE_CALLABLE,
 					hint = PROPERTY_HINT_TOOL_BUTTON,
 					usage = PROPERTY_USAGE_EDITOR,
-					hint_string = "Remove Game Mode,Remove"
+					hint_string = "Remove %s,Remove" % [mode.capitalize()]
 				})
 				
-				properties.append_array([{
-					name = &"Sing",
+				properties.append({
+					name = &"Add Animation Groups",
 					type = TYPE_NIL,
-					usage = PROPERTY_USAGE_SUBGROUP,
-					hint_string = "sing_"
-					}] + get_anim_properties_from_array(directions, "sing_")
-				)
+					usage = PROPERTY_USAGE_GROUP
+				})
 				
-				properties.append_array([{
-					name = &"Miss",
-					type = TYPE_NIL,
-					usage = PROPERTY_USAGE_SUBGROUP,
-					hint_string = "miss_"
-					}] + get_anim_properties_from_array(directions, "miss_")
-				)
-	#elif modes.is_empty():
-		#modes.append(&"mania")
-		#notify_property_list_changed()
+				properties.append({
+					name = &"_add_animation_group",
+					type = TYPE_CALLABLE,
+					hint = PROPERTY_HINT_TOOL_BUTTON,
+					usage = PROPERTY_USAGE_EDITOR,
+					hint_string = "Add Animation Group,Add"
+				})
+				
+				var mode_groups:Dictionary[StringName, int] = get("%s_anim_groups" % [mode])
+				for i:int in mode_groups.size():
+					var group_name:StringName = mode_groups.keys()[i]
+					var group_prefix:StringName = "%s_" % [group_name.to_lower()]
+					properties.append({
+						name = group_name.capitalize(),
+						type = TYPE_NIL,
+						usage = PROPERTY_USAGE_GROUP,
+						hint_string = group_prefix
+					})
+					
+					properties.append({
+						name = &"Aliases",
+						type = TYPE_NIL,
+						usage = PROPERTY_USAGE_SUBGROUP,
+						hint_string = "alias_"
+					})
+					
+					for group_size:int in mode_groups[group_name]:
+						properties.append({
+							name = &"alias_%s_lane%s" % [mode, str(group_size)],
+							type = TYPE_STRING_NAME,
+							hint = PROPERTY_HINT_TYPE_STRING,
+							usage = PROPERTY_USAGE_EDITOR
+						})
+					
+					for group_size:int in mode_groups[group_name]:
+						var anim_id:StringName = &"%s_lane%s" % [mode, str(group_size)]
+						properties.append({
+							name = mania_anim_aliases[anim_id] if mania_anim_aliases.has(anim_id) else anim_id,
+							hint = PROPERTY_HINT_ENUM,
+							type = TYPE_STRING_NAME,
+							usage = PROPERTY_USAGE_EDITOR,
+							hint_string = ",".join(anim_player_list)
+						})
 	
 	return properties
 
@@ -310,17 +361,8 @@ func remove_mode(mode_name:StringName) -> void:
 	modes.pop_at(mode_idx)
 	notify_property_list_changed()
 
-func get_anim_properties_from_array(array:PackedStringArray, prefix:StringName) -> Array[Dictionary]:
-	var properties:Array[Dictionary]
-	for animation:StringName in array:
-		properties.append({
-				name = prefix+animation,
-				hint = PROPERTY_HINT_ENUM,
-				type = TYPE_STRING_NAME,
-				usage = PROPERTY_USAGE_EDITOR,
-				hint_string = ",".join(anim_player_list)
-			})
-	return properties
+func add_animation_group() -> void:
+	pass
 
 func _get(property: StringName) -> Variant:
 	if property.begins_with("sing_") or property.begins_with("miss_"):
@@ -347,6 +389,7 @@ func _set(property: StringName, value: Variant) -> bool:
 		
 		animations[property] = value
 		return true
+	
 	return false
 
 func _property_can_revert(property: StringName) -> bool:
@@ -372,8 +415,8 @@ func _property_can_revert(property: StringName) -> bool:
 
 func _property_get_revert(property: StringName) -> Variant:
 	if property.begins_with("sing_") or property.begins_with("miss_"):
-		var dir_idx:int = directions.find(property.get_slice("_", 1))
-		var direction:StringName = directions[dir_idx]
+		var dir_idx:int = mania_directions.find(property.get_slice("_", 1))
+		var direction:StringName = mania_directions[dir_idx]
 		var anim:StringName = &"None"
 		for _anim:StringName in anim_player_list:
 			var anim_lower:StringName = _anim.to_lower()

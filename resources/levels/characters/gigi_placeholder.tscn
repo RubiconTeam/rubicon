@@ -118,11 +118,13 @@ reference_animation_player = NodePath("RootAnimationPlayer")
 animations = Dictionary[StringName, StringName]({
 &"miss_down": &"miss",
 &"miss_left": &"miss",
+&"miss_miss": &"",
 &"miss_right": &"miss",
 &"miss_up": &"miss",
 &"sing_down": &"sing_down",
 &"sing_left": &"sing_left",
 &"sing_right": &"sing_right",
+&"sing_sing": &"",
 &"sing_up": &"sing_up"
 })
 
