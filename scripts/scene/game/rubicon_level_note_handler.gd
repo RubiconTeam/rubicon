@@ -163,7 +163,8 @@ func _process(delta: float) -> void:
 		note_spawn_end += 1
 	
 	# Handle rewinding
-	if get_controller().autoplay:
+	var autoplay:bool = (get_controller().autoplay or (get_controller().preview_as_autoplay and Engine.is_editor_hint()))
+	if autoplay:
 		while _has_passed_last_note(millisecond_position):
 			_roll_hit_back()
 		
@@ -194,7 +195,7 @@ func _process(delta: float) -> void:
 	if note_hit_index >= data.size():
 		return
 	
-	if get_controller().autoplay:
+	if autoplay:
 		_autoplay_process(millisecond_position)
 	
 	var should_complete : bool = results[note_hit_index] != null and results[note_hit_index].scoring_hit == RubiconLevelNoteHitResult.Hit.HIT_INCOMPLETE and data[note_hit_index].get_millisecond_end_position() - millisecond_position <= 0.0
@@ -202,7 +203,7 @@ func _process(delta: float) -> void:
 		hit_note(note_hit_index, data[note_hit_index].get_millisecond_end_position(), RubiconLevelNoteHitResult.Hit.HIT_COMPLETE)
 		note_hit_index += 1
 	
-	while not get_controller().autoplay and note_hit_index < data.size() and data[note_hit_index].get_millisecond_start_position() - millisecond_position < -settings.judgment_window_bad and (results[note_hit_index] == null or results[note_hit_index].scoring_hit == RubiconLevelNoteHitResult.Hit.HIT_NONE):
+	while not autoplay and note_hit_index < data.size() and data[note_hit_index].get_millisecond_start_position() - millisecond_position < -settings.judgment_window_bad and (results[note_hit_index] == null or results[note_hit_index].scoring_hit == RubiconLevelNoteHitResult.Hit.HIT_NONE):
 		hit_note(note_hit_index, data[note_hit_index].get_millisecond_start_position() + settings.judgment_window_bad + 1, RubiconLevelNoteHitResult.Hit.HIT_COMPLETE) # TODO: Add more forgiving hold notes
 		note_hit_index += 1
 
