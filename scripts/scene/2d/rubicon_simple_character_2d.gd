@@ -5,13 +5,6 @@ class_name RubiconSimpleCharacter2D extends Node2D
 @export var should_dance:bool = true
 @export var should_sing:bool = true
 
-enum CharacterHoldType {
-	NONE,
-	FREEZE,
-	REPEAT,
-	STEP_REPEAT,
-}
-
 @export var hold_type:CharacterHoldType = CharacterHoldType.FREEZE:
 	set(value):
 		hold_type = value
@@ -19,21 +12,24 @@ enum CharacterHoldType {
 @export_storage var repeat_loop_point:float = 0.125
 @export_storage var step_time_value:float = 1
 
-@export_group("References", "reference_")
-@export var reference_animation_player:AnimationPlayer:
+@export var animation_player:AnimationPlayer:
 	set(value):
-		reference_animation_player = value
+		animation_player = value
 		notify_property_list_changed()
 		update_configuration_warnings()
 
-@export var reference_note_controller : RubiconLevelNoteController:
+@export_group("Level-only References", "level_")
+@export var level_note_controller : RubiconLevelNoteController:
 	set(value):
-		reference_note_controller = value
+		if is_tree_root and level_note_controller == null:
+			printerr("Not recommended to assign a Note Controller on a character's scene (unless you know what you're doing!)")
+		
+		level_note_controller = value
 		notify_property_list_changed()
 		update_configuration_warnings()
 		
-		if reference_note_controller != null:
-			reference_note_controller.connect("note_hit", note_hit)
+		if level_note_controller != null:
+			level_note_controller.connect("note_changed", note_changed)
 
 var camera_point:Marker2D:
 	get():
@@ -45,124 +41,150 @@ var camera_point:Marker2D:
 var camera_point_path:NodePath
 var camera_point_offset:Vector2
 
+var state:CharacterState
+
+var _last_result : RubiconLevelNoteHitResult
+var _last_sing_anim : StringName
+var _hold_anim_timer : float
+
+enum CharacterHoldType {
+	NONE,
+	FREEZE,
+	REPEAT,
+	STEP_REPEAT,
+}
+
 enum CharacterState {
+	STATE_RESTING,
 	STATE_DANCING,
 	STATE_SINGING,
 	STATE_HOLDING,
 	STATE_OVERRIDE,
 }
 
-var state:CharacterState
-
-var _results_cache : Array[RubiconLevelNoteHitResult]
-var _last_time_when_hit:float
-
 func _valid_controller() -> bool:
-	return reference_note_controller != null and reference_note_controller.get_level_clock() != null
+	return level_note_controller != null and level_note_controller.get_level_clock() != null
+
+#func _process(delta: float) -> void:
+	#if not _valid_controller():
+		#return
+	#
+	#var current_result : RubiconLevelNoteHitResult
+	#var clock : RubiconLevelClock = level_note_controller.get_level_clock()
+	#for handler_id in level_note_controller.note_handlers:
+		#var handler : RubiconLevelNoteHandler = level_note_controller.note_handlers[handler_id]
+		#var handler_result : RubiconLevelNoteHitResult = handler.results[handler.note_hit_index] # Get current note holding
+		#if handler.note_hit_index > 0 and (handler_result == null or handler_result.scoring_hit == RubiconLevelNoteHitResult.Hit.HIT_NONE):
+			#handler_result = handler.results[handler.note_hit_index - 1] # Get last note hit
+		#
+		## Invalid
+		#if handler_result == null or handler_result.time_when_hit > clock.time_milliseconds:
+			#continue
+#
+		#if current_result == null or handler_result.time_when_hit > current_result.time_when_hit:
+			#current_result = handler_result
+	#
+	## Idling
+	#if current_result == null:
+		#_handle_dancing()
+		#return
+#
+	#match current_result.scoring_hit:
+		#RubiconLevelNoteHitResult.Hit.HIT_NONE:
+			#_handle_dancing()
+		#RubiconLevelNoteHitResult.Hit.HIT_INCOMPLETE:
+			#_handle_singing(current_result)
+		#RubiconLevelNoteHitResult.Hit.HIT_COMPLETE:
+			#_handle_singing(current_result)
+#
+			#var data : RubiChartNote = current_result.handler.data[current_result.data_index]
+			#var millisecond_to_idle_at : float = RubiconTimeChange.get_millisecond_at_step(clock.get_time_changes(), RubiconTimeChange.get_step_at_millisecond(clock.get_time_changes(), data.get_millisecond_end_position()) + steps_until_idle)
+			#if current_result.handler.data[current_result.data_index].get_millisecond_end_position() > millisecond_to_idle_at:
+				#_handle_dancing()
+
+func note_changed(result:RubiconLevelNoteHitResult) -> void:
+	if state == CharacterState.STATE_OVERRIDE:
+		return
+	
+	if result.scoring_hit == RubiconLevelNoteHitResult.Hit.HIT_NONE:
+		state = CharacterState.STATE_RESTING
+		print("resting")
+		return
+	
+	if should_sing:
+		_last_result = result
+		_last_sing_anim = get_anim_alias_from_result(_last_result)
+		match result.scoring_hit:
+			RubiconLevelNoteHitResult.Hit.HIT_INCOMPLETE:
+				state = CharacterState.STATE_HOLDING
+				_hold_anim_timer = 0
+				_sing()
+				print("started holding")
+			
+			RubiconLevelNoteHitResult.Hit.HIT_COMPLETE:
+				state = CharacterState.STATE_SINGING
+				print("singing")
+				_sing()
 
 func _process(delta: float) -> void:
-	if not _valid_controller():
-		return
-	
-	var current_result : RubiconLevelNoteHitResult
-	var clock : RubiconLevelClock = reference_note_controller.get_level_clock()
-	for handler_id in reference_note_controller.note_handlers:
-		var handler : RubiconLevelNoteHandler = reference_note_controller.note_handlers[handler_id]
-		var handler_result : RubiconLevelNoteHitResult = handler.results[handler.note_hit_index] # Get current note holding
-		if handler.note_hit_index > 0 and (handler_result == null or handler_result.scoring_hit == RubiconLevelNoteHitResult.Hit.HIT_NONE):
-			handler_result = handler.results[handler.note_hit_index - 1] # Get last note hit
-		
-		# Invalid
-		if handler_result == null or handler_result.time_when_hit > clock.time_milliseconds:
-			continue
-
-		if current_result == null or handler_result.time_when_hit > current_result.time_when_hit:
-			current_result = handler_result
-	
-	# Idling
-	if current_result == null:
-		_handle_dancing()
-		return
-
-	match current_result.scoring_hit:
-		RubiconLevelNoteHitResult.Hit.HIT_NONE:
-			_handle_dancing()
-		RubiconLevelNoteHitResult.Hit.HIT_INCOMPLETE:
-			_handle_singing(current_result)
-		RubiconLevelNoteHitResult.Hit.HIT_COMPLETE:
-			_handle_singing(current_result)
-
-			var data : RubiChartNote = current_result.handler.data[current_result.data_index]
-			var millisecond_to_idle_at : float = RubiconTimeChange.get_millisecond_at_step(clock.get_time_changes(), RubiconTimeChange.get_step_at_millisecond(clock.get_time_changes(), data.get_millisecond_end_position()) + steps_until_idle)
-			if current_result.handler.data[current_result.data_index].get_millisecond_end_position() > millisecond_to_idle_at:
-				_handle_dancing()
+	if state == CharacterState.STATE_HOLDING:
+		match hold_type:
+			CharacterHoldType.NONE:
+				_sing()
+				state = CharacterState.STATE_RESTING
+			CharacterHoldType.FREEZE:
+				_sing()
+				animation_player.pause()
+				state = CharacterState.STATE_RESTING
+				print("please freeze")
+			CharacterHoldType.REPEAT:
+				_hold_anim_timer += delta
+				if _hold_anim_timer > repeat_loop_point:
+					_sing()
+					_hold_anim_timer = 0
+			CharacterHoldType.STEP_REPEAT:
+				_hold_anim_timer += delta
+				#if _hold_anim_timer > RubiconTimeChange.
+			#
 
 func _handle_dancing() -> void:
 	return
 	state = CharacterState.STATE_DANCING
 
-func _handle_singing(current_result : RubiconLevelNoteHitResult) -> void:
-	if state == CharacterState.STATE_OVERRIDE:
-		return
-	
-	var current_anim : StringName = get_anim_alias_from_result(current_result)
-	
-	var time_when_hit:float = current_result.time_when_hit
-	if _last_time_when_hit != time_when_hit:
-		reference_animation_player.current_animation = current_anim
-	
-	match current_result.scoring_hit:
-		RubiconLevelNoteHitResult.Hit.HIT_INCOMPLETE:
-			state = CharacterState.STATE_HOLDING
-			_handle_hold_animation(current_anim, time_when_hit)
-	
-		RubiconLevelNoteHitResult.Hit.HIT_COMPLETE:
-			state = CharacterState.STATE_SINGING
-			reference_animation_player.pause()
-			
-			var time_distance:float = (reference_note_controller.get_level_clock().time_milliseconds - time_when_hit) * 0.001 
-			if time_distance < reference_animation_player.current_animation_length:
-				reference_animation_player.seek(time_distance * reference_animation_player.speed_scale, true)
-	_last_time_when_hit = time_when_hit
+func _sing() -> void:
+	play(_last_sing_anim, true)
 
-func _handle_hold_animation(anim:StringName, time_when_hit:float) -> void:
+func _handle_hold_animation() -> void:
 	match hold_type:
 		CharacterHoldType.NONE:
 			return
 		CharacterHoldType.FREEZE:
-			var cur_anim:StringName = reference_animation_player.current_animation
-			if cur_anim != anim or reference_animation_player.current_animation_position > 0:
-				reference_animation_player.current_animation = anim
-				reference_animation_player.seek(0)
-				reference_animation_player.pause()
+			var cur_anim:StringName = animation_player.current_animation
+			if cur_anim != _last_sing_anim or animation_player.current_animation_position > 0:
+				animation_player.current_animation = _last_sing_anim
+				animation_player.seek(0)
+				animation_player.pause()
 		CharacterHoldType.REPEAT:
-			var time_distance:float = (reference_note_controller.get_level_clock().time_milliseconds - time_when_hit) * 0.001 
-			var anim_length:float = reference_animation_player.current_animation_length
+			var time_distance:float = (level_note_controller.get_level_clock().time_milliseconds - _last_result.time_when_hit) * 0.001 
+			var anim_length:float = animation_player.current_animation_length
 			var wrapped_time_distance:float = wrapf(time_distance, 0, repeat_loop_point if repeat_loop_point <= anim_length else anim_length)
-			reference_animation_player.seek(wrapped_time_distance * reference_animation_player.speed_scale, true)
-
-func note_hit(id:StringName, rating:RubiconLevelNoteHitResult.Judgment) -> void:
-	return
+			animation_player.seek(wrapped_time_distance * animation_player.speed_scale, true)
 
 func dance() -> void:
 	pass
 
-# will work on properties and overriding n shit later
-func play(anim_name:StringName, force:bool = true, warn_missing_animation:bool = false) -> void:
-	if reference_animation_player == null:
+func play(anim_name:StringName, warn_missing_animation:bool = false) -> void:
+	if animation_player == null:
 		printerr("Animation Player is null in character " + scene_file_path.get_file())
 		return
 	
-	if !reference_animation_player.has_animation(anim_name):
+	if !animation_player.has_animation(anim_name):
 		if warn_missing_animation:
 			printerr('No animation "'+anim_name+'" found in character: ' + scene_file_path.get_file())
 		return
 	
-	if reference_animation_player.is_playing() and !force:
-		return
-	
-	reference_animation_player.play(anim_name)
-	reference_animation_player.seek(0.0)
+	animation_player.play(anim_name)
+	animation_player.seek(0.0, true)
 
 func get_anim_alias_from_result(result:RubiconLevelNoteHitResult) -> StringName:
 	var current_id : StringName = result.handler.get_unique_id()
@@ -191,9 +213,9 @@ var is_tree_root:bool:
 @export_storage var animations:Dictionary[StringName,StringName] = {}
 var anim_player_list:PackedStringArray:
 	get():
-		if reference_animation_player != null:
+		if animation_player != null:
 			var anims:PackedStringArray = [&"None"]
-			anims.append_array(reference_animation_player.get_animation_list())
+			anims.append_array(animation_player.get_animation_list())
 			return anims
 		return [&"None"]
 
@@ -214,10 +236,10 @@ var mania_directions:Array[StringName] = [&"left", &"down", &"up", &"right"]
 func _get_configuration_warnings() -> PackedStringArray:
 	var warnings:PackedStringArray
 	
-	if reference_animation_player == null:
+	if animation_player == null:
 		warnings.append(tr("No root animation player assigned. Make sure to assign one under the character's properties"))
 	
-	if !is_tree_root and reference_note_controller == null:
+	if !is_tree_root and level_note_controller == null:
 		warnings.append(tr("Characters require a note controller to work. Make sure to assign one under the character's properties"))
 	
 	if !is_tree_root and (camera_point == null or camera_point_path.is_empty()):
@@ -258,7 +280,7 @@ func _get_property_list() -> Array[Dictionary]:
 			usage = PROPERTY_USAGE_DEFAULT
 		})
 	
-	if reference_animation_player != null:
+	if animation_player != null:
 		properties.append({
 			name = &"Animation Setup",
 			type = TYPE_NIL,

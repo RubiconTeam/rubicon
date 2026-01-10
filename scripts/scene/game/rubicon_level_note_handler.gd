@@ -126,6 +126,7 @@ func hit_note(index : int, time_when_hit : float, hit_type : RubiconLevelNoteHit
 			break
 	
 	result.scoring_rating = rating
+	get_controller().note_changed.emit(result)
 	
 	var note_type : StringName = data[index].type
 	var define_key : StringName = "%s_%s" % [note_type, get_mode_id()] if not note_type.is_empty() else get_mode_id()
@@ -163,7 +164,7 @@ func _process(delta: float) -> void:
 		note_spawn_end += 1
 	
 	# Handle rewinding
-	var autoplay:bool = (get_controller().autoplay or (get_controller().preview_as_autoplay and Engine.is_editor_hint()))
+	var autoplay:bool = get_controller().should_autoplay()
 	if autoplay:
 		while _has_passed_last_note(millisecond_position):
 			_roll_hit_back()
@@ -226,7 +227,9 @@ func _is_inside_of_incomplete_note(millisecond_position : float) -> bool:
 
 func _roll_hit_back() -> void:
 	note_hit_index -= 1
+	get_controller().note_changed.emit(results[note_hit_index])
 	results[note_hit_index].reset(RubiconLevelNoteHitResult.Hit.HIT_NONE)
+	
 
 func _reset_to_incomplete_note() -> void:
 	if results[note_hit_index] == null or results[note_hit_index].scoring_hit != RubiconLevelNoteHitResult.Hit.HIT_COMPLETE:

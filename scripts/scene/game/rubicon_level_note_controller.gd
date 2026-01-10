@@ -70,7 +70,7 @@ var _level_3d : RubiconLevel3D
 var _override_note_database : RubiconLevelNoteDatabase
 var _internal_note_database : Dictionary[StringName, RubiconLevelNoteMetadata]
 
-signal note_hit(id:StringName, rating:RubiconLevelNoteHitResult.Judgment)
+signal note_changed(result:RubiconLevelNoteHitResult)
 
 func _init() -> void:
 	set_process_internal(true)
@@ -171,8 +171,11 @@ func _notification(what: int) -> void:
 				
 				parent = parent.get_parent()
 
+func should_autoplay() -> bool:
+	return autoplay or (preview_as_autoplay and Engine.is_editor_hint())
+
 func _input(event: InputEvent) -> void:
-	if (autoplay or (preview_as_autoplay and Engine.is_editor_hint())) or event.is_echo() or inputs == null or not inputs.has_event_registered(event):
+	if should_autoplay() or event.is_echo() or inputs == null or not inputs.has_event_registered(event):
 		return
 	
 	var id : StringName = inputs.get_handler_id_for_event(event)
