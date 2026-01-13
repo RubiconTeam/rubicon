@@ -13,7 +13,7 @@ static func factor_offset_and_quant(values : Array) -> void:
 			continue
 		
 		values[0] /= cur_quant
-		values[1] = cur_quant
+		values[1] /= cur_quant
 		break
 
 static func chart_add_note_start(chart : RubiChart, note : RubiChartNote, measure : int, offset : int, quant : RubiChart.Quant) -> void:
