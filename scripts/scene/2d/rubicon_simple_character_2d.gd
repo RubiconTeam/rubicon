@@ -119,11 +119,9 @@ func note_changed(result:RubiconLevelNoteHitResult) -> void:
 				state = CharacterState.STATE_HOLDING
 				_hold_anim_timer = 0
 				_sing()
-				print("started holding")
 			
 			RubiconLevelNoteHitResult.Hit.HIT_COMPLETE:
 				state = CharacterState.STATE_SINGING
-				print("singing")
 				_sing()
 
 func _process(delta: float) -> void:
@@ -136,7 +134,6 @@ func _process(delta: float) -> void:
 				_sing()
 				animation_player.pause()
 				state = CharacterState.STATE_RESTING
-				print("please freeze")
 			CharacterHoldType.REPEAT:
 				_hold_anim_timer += delta
 				if _hold_anim_timer > repeat_loop_point:
@@ -189,7 +186,6 @@ func play(anim_name:StringName, warn_missing_animation:bool = false) -> void:
 func get_anim_alias_from_result(result:RubiconLevelNoteHitResult) -> StringName:
 	var current_id : StringName = result.handler.get_unique_id()
 	var mode_aliases:Dictionary[StringName, StringName] = get(result.handler.get_mode_id().to_lower() + "_anim_aliases")
-	print(result.handler.get_mode_id().to_lower() + "_anim_aliases")
 	if mode_aliases == null or mode_aliases.is_empty():
 		printerr("Couldn't get animation alias list for mode: " + result.handler.get_mode_id().to_lower())
 		return &""
