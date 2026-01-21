@@ -126,7 +126,9 @@ func hit_note(index : int, time_when_hit : float, hit_type : RubiconLevelNoteHit
 			break
 	
 	result.scoring_rating = rating
-	get_controller().note_changed.emit(result)
+	
+	var has_ending_row:bool = data[index].ending_row != null
+	get_controller().note_changed.emit(result, has_ending_row)
 	
 	var note_type : StringName = data[index].type
 	var define_key : StringName = "%s_%s" % [note_type, get_mode_id()] if not note_type.is_empty() else get_mode_id()
