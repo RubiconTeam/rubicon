@@ -24,6 +24,9 @@ class_name RubiconSimpleCharacter2D extends Node2D
 		if is_tree_root and level_note_controller == null:
 			printerr("Not recommended to assign a Note Controller on a character's scene (unless you know what you're doing!)")
 		
+		if value != level_note_controller and level_note_controller != null and level_note_controller.note_changed.is_connected(note_changed):
+			level_note_controller.disconnect("note_changed", note_changed)
+		
 		level_note_controller = value
 		notify_property_list_changed()
 		update_configuration_warnings()
@@ -45,7 +48,6 @@ var state:CharacterState
 
 var _last_result : RubiconLevelNoteHitResult
 var _last_sing_anim : StringName
-var _hold_anim_timer : float
 
 enum CharacterHoldType {
 	NONE,
@@ -65,50 +67,12 @@ enum CharacterState {
 func _valid_controller() -> bool:
 	return level_note_controller != null and level_note_controller.get_level_clock() != null
 
-#func _process(delta: float) -> void:
-	#if not _valid_controller():
-		#return
-	#
-	#var current_result : RubiconLevelNoteHitResult
-	#var clock : RubiconLevelClock = level_note_controller.get_level_clock()
-	#for handler_id in level_note_controller.note_handlers:
-		#var handler : RubiconLevelNoteHandler = level_note_controller.note_handlers[handler_id]
-		#var handler_result : RubiconLevelNoteHitResult = handler.results[handler.note_hit_index] # Get current note holding
-		#if handler.note_hit_index > 0 and (handler_result == null or handler_result.scoring_hit == RubiconLevelNoteHitResult.Hit.HIT_NONE):
-			#handler_result = handler.results[handler.note_hit_index - 1] # Get last note hit
-		#
-		## Invalid
-		#if handler_result == null or handler_result.time_when_hit > clock.time_milliseconds:
-			#continue
-#
-		#if current_result == null or handler_result.time_when_hit > current_result.time_when_hit:
-			#current_result = handler_result
-	#
-	## Idling
-	#if current_result == null:
-		#_handle_dancing()
-		#return
-#
-	#match current_result.scoring_hit:
-		#RubiconLevelNoteHitResult.Hit.HIT_NONE:
-			#_handle_dancing()
-		#RubiconLevelNoteHitResult.Hit.HIT_INCOMPLETE:
-			#_handle_singing(current_result)
-		#RubiconLevelNoteHitResult.Hit.HIT_COMPLETE:
-			#_handle_singing(current_result)
-#
-			#var data : RubiChartNote = current_result.handler.data[current_result.data_index]
-			#var millisecond_to_idle_at : float = RubiconTimeChange.get_millisecond_at_step(clock.get_time_changes(), RubiconTimeChange.get_step_at_millisecond(clock.get_time_changes(), data.get_millisecond_end_position()) + steps_until_idle)
-			#if current_result.handler.data[current_result.data_index].get_millisecond_end_position() > millisecond_to_idle_at:
-				#_handle_dancing()
-
-func note_changed(result:RubiconLevelNoteHitResult) -> void:
-	if state == CharacterState.STATE_OVERRIDE:
+func note_changed(result:RubiconLevelNoteHitResult, has_ending_row:bool = false) -> void:
+	if state == CharacterState.STATE_OVERRIDE or !_valid_controller():
 		return
 	
 	if result.scoring_hit == RubiconLevelNoteHitResult.Hit.HIT_NONE:
 		state = CharacterState.STATE_RESTING
-		print("resting")
 		return
 	
 	if should_sing:
@@ -117,55 +81,35 @@ func note_changed(result:RubiconLevelNoteHitResult) -> void:
 		match result.scoring_hit:
 			RubiconLevelNoteHitResult.Hit.HIT_INCOMPLETE:
 				state = CharacterState.STATE_HOLDING
-				_hold_anim_timer = 0
-				_sing()
+				play(_last_sing_anim, true)
 			
 			RubiconLevelNoteHitResult.Hit.HIT_COMPLETE:
 				state = CharacterState.STATE_SINGING
-				_sing()
+				if has_ending_row and hold_type != CharacterHoldType.FREEZE:
+					return
+				play(_last_sing_anim, true)
 
 func _process(delta: float) -> void:
 	if state == CharacterState.STATE_HOLDING:
 		match hold_type:
 			CharacterHoldType.NONE:
-				_sing()
+				play(_last_sing_anim, true)
 				state = CharacterState.STATE_RESTING
 			CharacterHoldType.FREEZE:
-				_sing()
+				play(_last_sing_anim, true)
 				animation_player.pause()
 				state = CharacterState.STATE_RESTING
 			CharacterHoldType.REPEAT:
-				_hold_anim_timer += delta
-				if _hold_anim_timer > repeat_loop_point:
-					_sing()
-					_hold_anim_timer = 0
+				if animation_player.current_animation_position > repeat_loop_point:
+					play(_last_sing_anim, true)
 			CharacterHoldType.STEP_REPEAT:
-				_hold_anim_timer += delta
-				#if _hold_anim_timer > RubiconTimeChange.
+				pass
+				#if animation_player.current_animation_position > RubiconTimeChange.
 			#
 
 func _handle_dancing() -> void:
 	return
 	state = CharacterState.STATE_DANCING
-
-func _sing() -> void:
-	play(_last_sing_anim, true)
-
-func _handle_hold_animation() -> void:
-	match hold_type:
-		CharacterHoldType.NONE:
-			return
-		CharacterHoldType.FREEZE:
-			var cur_anim:StringName = animation_player.current_animation
-			if cur_anim != _last_sing_anim or animation_player.current_animation_position > 0:
-				animation_player.current_animation = _last_sing_anim
-				animation_player.seek(0)
-				animation_player.pause()
-		CharacterHoldType.REPEAT:
-			var time_distance:float = (level_note_controller.get_level_clock().time_milliseconds - _last_result.time_when_hit) * 0.001 
-			var anim_length:float = animation_player.current_animation_length
-			var wrapped_time_distance:float = wrapf(time_distance, 0, repeat_loop_point if repeat_loop_point <= anim_length else anim_length)
-			animation_player.seek(wrapped_time_distance * animation_player.speed_scale, true)
 
 func dance() -> void:
 	pass
