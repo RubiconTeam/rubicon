@@ -36,20 +36,15 @@ class_name RubiconLevelClock extends Node
 	set(val):
 		time_milliseconds = RubiconTimeChange.get_millisecond_at_step(get_time_changes(), val)
 
-var level_2d : RubiconLevel:
+var level : RubiconLevel:
 	get:
-		return _level_2d
-
-var level_3d : RubiconLevel3D:
-	get:
-		return _level_3d
+		return _level
 
 var animation_player : AnimationPlayer:
 	get:
 		return _animation_player
 
-var _level_2d : RubiconLevel
-var _level_3d : RubiconLevel3D
+var _level : RubiconLevel
 var _animation_player : AnimationPlayer
 
 var _current_frame_time : float
@@ -59,11 +54,8 @@ func get_time_precise() -> float:
 	return _current_frame_time + (Time.get_unix_time_from_system() - _relative_time_offset) * 1000.0
 
 func get_time_changes() -> Array[RubiconTimeChange]:
-	if _level_2d != null and _level_2d.metadata != null:
-		return _level_2d.metadata.time_changes
-	
-	if _level_3d != null and _level_3d.metadata != null:
-		return _level_3d.metadata.time_changes
+	if _level != null and _level.metadata != null:
+		return _level.metadata.time_changes
 	
 	return []
 
@@ -78,30 +70,16 @@ func _process(delta: float) -> void:
 func _notification(what: int) -> void:
 	match what:
 		NOTIFICATION_PARENTED:
-			if _level_2d != null:
-				_level_2d.clock = null
-				_level_2d = null
-			
-			if _level_3d != null:
-				_level_3d.clock = null
-				_level_3d = null
+			if _level != null:
+				_level.clock = null
+				_level = null
 			
 			var parent : Node = get_parent()
 			if parent is RubiconLevel:
-				_level_2d = parent
+				_level = parent
 				
-				if _level_2d.clock == null:
-					_level_2d.clock = self
-				else:
-					printerr(tr("WARNING!! Having more than one RubiconLevelClock in a level can lead to problems!"))
-				
-				return
-			
-			if parent is RubiconLevel3D:
-				_level_3d = parent
-				
-				if _level_3d.clock == null:
-					_level_3d.clock = self
+				if _level.clock == null:
+					_level.clock = self
 				else:
 					printerr(tr("WARNING!! Having more than one RubiconLevelClock in a level can lead to problems!"))
 				
@@ -117,7 +95,7 @@ func _notification(what: int) -> void:
 func _get_configuration_warnings() -> PackedStringArray:
 	var warnings : PackedStringArray
 	
-	if level_2d == null and level_3d == null:
+	if level == null:
 		warnings.append(tr("This node relies on being parented to a RubiconLevel! Please parent this node to a RubiconLevel node"))
 	
 	if _animation_player == null:

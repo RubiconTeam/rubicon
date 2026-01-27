@@ -64,8 +64,7 @@ var note_handlers : Dictionary[String, RubiconLevelNoteHandler]
 var _chart : RubiChart
 var _chart_dirty : bool = false
 
-var _level_2d : RubiconLevel
-var _level_3d : RubiconLevel3D
+var _level : RubiconLevel
 
 var _override_note_database : RubiconLevelNoteDatabase
 var _internal_note_database : Dictionary[StringName, RubiconLevelNoteMetadata]
@@ -88,20 +87,14 @@ func update_chart() -> void:
 		note_handlers[id].update_notes()
 
 func get_level_clock() -> RubiconLevelClock:
-	if _level_2d != null:
-		return _level_2d.clock
-	
-	if _level_3d != null:
-		return _level_3d.clock
+	if _level != null:
+		return _level.clock
 	
 	return null
 
 func get_level_metadata() -> RubiconLevelMetadata:
-	if _level_2d != null:
-		return _level_2d.metadata
-	
-	if _level_3d != null:
-		return _level_3d.metadata
+	if _level != null:
+		return _level.metadata
 	
 	return null
 
@@ -150,23 +143,15 @@ func _notification(what: int) -> void:
 				
 				_chart_dirty = false
 		NOTIFICATION_PARENTED:
-			if _level_2d != null:
-				_level_2d.metadata_changed.disconnect(update_chart)
-				_level_2d = null
-			
-			if _level_3d != null:
-				_level_3d.metadata_changed.disconnect(update_chart)
-				_level_3d = null
+			if _level != null:
+				_level.metadata_changed.disconnect(update_chart)
+				_level = null
 			
 			var parent : Node = get_parent()
 			while parent != null:
 				if parent is RubiconLevel:
-					_level_2d = parent
-					_level_2d.metadata_changed.connect(update_chart)
-					break
-				elif parent is RubiconLevel3D:
-					_level_3d = parent
-					_level_3d.metadata_changed.connect(update_chart)
+					_level = parent
+					_level.metadata_changed.connect(update_chart)
 					break
 				
 				parent = parent.get_parent()
