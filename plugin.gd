@@ -61,14 +61,14 @@ func _create_popup(paths:PackedStringArray, popup_scene:PackedScene, confirm_cal
 	instance.confirmed.connect(func(): confirm_call.call(instance.base_path, instance._name))
 
 func _scene_changed(scene_root:Node) -> void:
-	if scene_root is RubiconLevel2D or scene_root is RubiconLevel3D:
+	if scene_root is RubiconLevel:
 		add_control_to_container(CONTAINER_CANVAS_EDITOR_MENU, playtest_checkbox)
 	else:
 		disable_playtesting()
 		remove_control_from_container(CONTAINER_CANVAS_EDITOR_MENU, playtest_checkbox)
 
 func playtest_checked() -> void:
-	if get_tree() != null and !(get_tree().edited_scene_root is RubiconLevel2D or get_tree().edited_scene_root is RubiconLevel3D):
+	if get_tree() != null and !(get_tree().edited_scene_root is RubiconLevel):
 		return
 	
 	playtesting_level = playtest_checkbox.button_pressed
@@ -79,7 +79,9 @@ func disable_playtesting() -> void:
 	EditorInterface.get_editor_viewport_2d().gui_disable_input = false
 
 func _handles(object: Object) -> bool:
-	return true
+	if object is RubiconLevel:
+		return true
+	return false
 
 func _forward_canvas_gui_input(event: InputEvent) -> bool:
 	if event is InputEventKey and playtesting_level:
