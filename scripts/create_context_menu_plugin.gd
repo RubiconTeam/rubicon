@@ -19,12 +19,12 @@ func _create_simple_character(path:String, char_name:String) -> void:
 		template_instance.name = char_name
 	
 	var scene:PackedScene = PackedScene.new()
-	scene.pack(template_instance if template_instance != null and template_instance is RubiconSimpleCharacter2D else _make_simple_character_tree(char_name))
+	scene.pack(template_instance if template_instance != null and template_instance is RubiconSimpleCharacter else _make_simple_character_tree(char_name))
 	var scene_path:String = path+char_name+".tscn"
 	ResourceSaver.save(scene, scene_path)
 
 func _make_simple_character_tree(_name:String, sprite_frames_path:String = "", animation_library_path:String = "") -> Node:
-	var root:RubiconSimpleCharacter2D = RubiconSimpleCharacter2D.new()
+	var root:RubiconSimpleCharacter = RubiconSimpleCharacter.new()
 	root.name = _name
 	
 	if !sprite_frames_path.is_empty():

@@ -64,7 +64,7 @@ var note_handlers : Dictionary[String, RubiconLevelNoteHandler]
 var _chart : RubiChart
 var _chart_dirty : bool = false
 
-var _level_2d : RubiconLevel2D
+var _level_2d : RubiconLevel
 var _level_3d : RubiconLevel3D
 
 var _override_note_database : RubiconLevelNoteDatabase
@@ -160,7 +160,7 @@ func _notification(what: int) -> void:
 			
 			var parent : Node = get_parent()
 			while parent != null:
-				if parent is RubiconLevel2D:
+				if parent is RubiconLevel:
 					_level_2d = parent
 					_level_2d.metadata_changed.connect(update_chart)
 					break

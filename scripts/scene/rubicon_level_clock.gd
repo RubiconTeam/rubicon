@@ -36,7 +36,7 @@ class_name RubiconLevelClock extends Node
 	set(val):
 		time_milliseconds = RubiconTimeChange.get_millisecond_at_step(get_time_changes(), val)
 
-var level_2d : RubiconLevel2D:
+var level_2d : RubiconLevel:
 	get:
 		return _level_2d
 
@@ -48,7 +48,7 @@ var animation_player : AnimationPlayer:
 	get:
 		return _animation_player
 
-var _level_2d : RubiconLevel2D
+var _level_2d : RubiconLevel
 var _level_3d : RubiconLevel3D
 var _animation_player : AnimationPlayer
 
@@ -87,7 +87,7 @@ func _notification(what: int) -> void:
 				_level_3d = null
 			
 			var parent : Node = get_parent()
-			if parent is RubiconLevel2D:
+			if parent is RubiconLevel:
 				_level_2d = parent
 				
 				if _level_2d.clock == null:
@@ -118,7 +118,7 @@ func _get_configuration_warnings() -> PackedStringArray:
 	var warnings : PackedStringArray
 	
 	if level_2d == null and level_3d == null:
-		warnings.append(tr("This node relies on being parented to a RubiconLevel! Please parent this node to a RubiconLevel2D or RubiconLevel3D"))
+		warnings.append(tr("This node relies on being parented to a RubiconLevel! Please parent this node to a RubiconLevel node"))
 	
 	if _animation_player == null:
 		warnings.append(tr("No AnimationPlayer child found! The clock relies on its first AnimationPlayer child to function."))

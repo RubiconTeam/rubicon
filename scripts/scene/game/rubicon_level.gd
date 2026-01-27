@@ -1,5 +1,5 @@
 @tool
-class_name RubiconLevel2D extends Node2D
+class_name RubiconLevel extends Node
 
 @export var metadata : RubiconLevelMetadata:
 	get:
