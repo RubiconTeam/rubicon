@@ -1,5 +1,5 @@
 @tool
-class_name RubiconSimpleCharacter extends Node2D
+class_name RubiconCharacter extends Node2D
 
 @export var steps_until_idle : int = 4
 @export var should_dance:bool = true

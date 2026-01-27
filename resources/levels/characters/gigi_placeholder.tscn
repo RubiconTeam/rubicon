@@ -1,6 +1,6 @@
-[gd_scene load_steps=12 format=3 uid="uid://cssfk3u4d5q1x"]
+[gd_scene format=3 uid="uid://cssfk3u4d5q1x"]
 
-[ext_resource type="Script" uid="uid://dqqqiv8d0q8gc" path="res://addons/rubicon/scripts/scene/2d/rubicon_simple_character_2d.gd" id="1_snahq"]
+[ext_resource type="Script" uid="uid://dqqqiv8d0q8gc" path="res://addons/rubicon/scripts/scene/game/rubicon_character.gd" id="1_snahq"]
 [ext_resource type="SpriteFrames" uid="uid://7h5xqubgdxam" path="res://addons/rubicon/assets/levels/characters/gigi_placeholder/gigi_placeholder.tres" id="2_5ui0e"]
 [ext_resource type="AnimationLibrary" uid="uid://b0vhbwobnaic7" path="res://addons/rubicon/assets/levels/characters/gigi_placeholder/gigi_placeholder_library.tres" id="3_s0343"]
 
