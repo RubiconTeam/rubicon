@@ -157,7 +157,7 @@ func _notification(what: int) -> void:
 				parent = parent.get_parent()
 
 func should_autoplay() -> bool:
-	return autoplay or (preview_as_autoplay and Engine.is_editor_hint())
+	return autoplay or (preview_as_autoplay and Engine.is_editor_hint() and !RubiconPlugin.playtesting_level)
 
 func _input(event: InputEvent) -> void:
 	if should_autoplay() or event.is_echo() or inputs == null or not inputs.has_event_registered(event):

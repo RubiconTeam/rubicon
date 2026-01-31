@@ -5,7 +5,7 @@ class_name RubiconPlugin
 const CREATE_CONTEXT_MENU_PLUGIN = preload("res://addons/rubicon/scripts/create_context_menu_plugin.gd")
 var _instance:EditorContextMenuPlugin
 
-var playtesting_level:bool = false
+static var playtesting_level:bool = false
 var playtest_checkbox:CheckBox
 
 func _enter_tree() -> void:
@@ -79,7 +79,7 @@ func disable_playtesting() -> void:
 	EditorInterface.get_editor_viewport_2d().gui_disable_input = false
 
 func _handles(object: Object) -> bool:
-	if object is RubiconLevel:
+	if object is Node:
 		return true
 	return false
 
