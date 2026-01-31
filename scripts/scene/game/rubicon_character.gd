@@ -1,5 +1,5 @@
 @tool
-class_name RubiconCharacter extends Node2D
+class_name RubiconCharacter extends Node
 
 @export var steps_until_idle : int = 4
 @export var should_dance:bool = true
@@ -80,22 +80,23 @@ func note_changed(result:RubiconLevelNoteHitResult, has_ending_row:bool = false)
 		_last_sing_anim = get_anim_alias_from_result(_last_result)
 		match result.scoring_hit:
 			RubiconLevelNoteHitResult.Hit.HIT_INCOMPLETE:
-				state = CharacterState.STATE_HOLDING
 				play(_last_sing_anim, true)
+				state = CharacterState.STATE_HOLDING
 			
 			RubiconLevelNoteHitResult.Hit.HIT_COMPLETE:
-				state = CharacterState.STATE_SINGING
-				if has_ending_row and hold_type != CharacterHoldType.FREEZE:
+				if has_ending_row and hold_type != CharacterHoldType.FREEZE and result.scoring_rating != RubiconLevelNoteHitResult.Judgment.JUDGMENT_MISS:
 					return
+				state = CharacterState.STATE_SINGING
+				
 				play(_last_sing_anim, true)
 
 func _process(delta: float) -> void:
 	if state == CharacterState.STATE_HOLDING:
 		match hold_type:
 			CharacterHoldType.NONE:
-				play(_last_sing_anim, true)
 				state = CharacterState.STATE_RESTING
 			CharacterHoldType.FREEZE:
+				animation_player.stop()
 				play(_last_sing_anim, true)
 				animation_player.pause()
 				state = CharacterState.STATE_RESTING
@@ -104,8 +105,6 @@ func _process(delta: float) -> void:
 					play(_last_sing_anim, true)
 			CharacterHoldType.STEP_REPEAT:
 				pass
-				#if animation_player.current_animation_position > RubiconTimeChange.
-			#
 
 func _handle_dancing() -> void:
 	return
@@ -138,6 +137,9 @@ func get_anim_alias_from_result(result:RubiconLevelNoteHitResult) -> StringName:
 		return &""
 	
 	var current_anim : StringName = animations[mode_aliases[current_id]]
+	#temporary
+	if result.scoring_rating == RubiconLevelNoteHitResult.Judgment.JUDGMENT_MISS:
+		current_anim = &"dance_idle"
 	return current_anim
 
 #region Custom Property Handling
