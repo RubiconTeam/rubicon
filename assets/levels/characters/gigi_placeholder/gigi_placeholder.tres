@@ -1,4 +1,4 @@
-[gd_resource type="SpriteFrames" load_steps=17 format=3 uid="uid://7h5xqubgdxam"]
+[gd_resource type="SpriteFrames" format=3 uid="uid://7h5xqubgdxam"]
 
 [ext_resource type="Texture2D" uid="uid://c38mu40s8fn0n" path="res://addons/rubicon/assets/levels/characters/gigi_placeholder/gigi_placeholder.png" id="1_5rlnb"]
 
