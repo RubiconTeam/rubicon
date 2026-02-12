@@ -70,6 +70,8 @@ var _override_note_database : RubiconLevelNoteDatabase
 var _internal_note_database : Dictionary[StringName, RubiconLevelNoteMetadata]
 
 signal note_changed(result:RubiconLevelNoteHitResult, has_ending_row:bool)
+signal press
+signal release
 
 func _init() -> void:
 	set_process_internal(true)
@@ -173,5 +175,7 @@ func _input(event: InputEvent) -> void:
 
 	if event.is_pressed():
 		note_handlers[id]._press(event)
+		press.emit()
 	else:
 		note_handlers[id]._release(event)
+		release.emit()
