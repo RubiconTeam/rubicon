@@ -72,7 +72,8 @@ func spawn_note(index : int) -> void:
 	graphics[index] = graphic
 	
 	add_child(graphic)
-	graphic.owner = self
+	if Engine.is_editor_hint():
+		graphic.owner = self
 	sort_graphic(index)
 
 func despawn_note(index : int) -> void:
