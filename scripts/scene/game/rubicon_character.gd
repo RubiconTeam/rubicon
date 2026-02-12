@@ -1,7 +1,8 @@
 @tool
 class_name RubiconCharacter extends Node
 
-@export var steps_until_idle : int = 4
+@export var steps_until_dance : int = 4
+@export var force_dance:bool = true
 @export var should_dance:bool = true
 @export var should_sing:bool = true
 
@@ -24,15 +25,19 @@ class_name RubiconCharacter extends Node
 		if is_tree_root and level_note_controller == null:
 			printerr("Not recommended to assign a Note Controller on a character's scene (unless you know what you're doing!)")
 		
-		if value != level_note_controller and level_note_controller != null and level_note_controller.note_changed.is_connected(note_changed):
-			level_note_controller.disconnect("note_changed", note_changed)
-		
+		if value != level_note_controller and level_note_controller != null:
+			if level_note_controller.note_changed.is_connected(note_changed):
+				level_note_controller.note_changed.disconnect(note_changed)
+			if level_note_controller.release.is_connected(_handler_released):
+				level_note_controller.release.disconnect(_handler_released)
+			
 		level_note_controller = value
 		notify_property_list_changed()
 		update_configuration_warnings()
-		
+			
 		if level_note_controller != null:
-			level_note_controller.connect("note_changed", note_changed)
+			level_note_controller.note_changed.connect(note_changed)
+			level_note_controller.release.connect(_handler_released)
 
 var camera_point:Marker2D:
 	get():
@@ -44,10 +49,12 @@ var camera_point:Marker2D:
 var camera_point_path:NodePath
 var camera_point_offset:Vector2
 
-var state:CharacterState
+var state:CharacterState = CharacterState.STATE_DANCING
 
-var _last_result : RubiconLevelNoteHitResult
-var _last_sing_anim : StringName
+var _last_result:RubiconLevelNoteHitResult
+var _last_sing_anim:StringName
+var _released_note:bool = true
+var _last_dance_step:float
 
 enum CharacterHoldType {
 	NONE,
@@ -78,6 +85,9 @@ func note_changed(result:RubiconLevelNoteHitResult, has_ending_row:bool = false)
 	if should_sing:
 		_last_result = result
 		_last_sing_anim = get_anim_alias_from_result(_last_result)
+		
+		_released_note = result.scoring_rating == RubiconLevelNoteHitResult.Judgment.JUDGMENT_MISS
+		
 		match result.scoring_hit:
 			RubiconLevelNoteHitResult.Hit.HIT_INCOMPLETE:
 				play(_last_sing_anim, true)
@@ -90,6 +100,7 @@ func note_changed(result:RubiconLevelNoteHitResult, has_ending_row:bool = false)
 				
 				play(_last_sing_anim, true)
 
+const PLACEHOLDER_DANCE_ANIM = "dance_idle"
 func _process(delta: float) -> void:
 	if state == CharacterState.STATE_HOLDING:
 		match hold_type:
@@ -103,15 +114,26 @@ func _process(delta: float) -> void:
 			CharacterHoldType.REPEAT:
 				if animation_player.current_animation_position > repeat_loop_point:
 					play(_last_sing_anim, true)
-			CharacterHoldType.STEP_REPEAT:
-				pass
 
-func _handle_dancing() -> void:
-	return
-	state = CharacterState.STATE_DANCING
+func step_change() -> void:
+	if state == CharacterState.STATE_HOLDING and hold_type == CharacterHoldType.STEP_REPEAT:
+		#step repeat code i dont wanna do rn
+		pass
+	
+	if level_note_controller == null or animation_player == null:
+		return
+	
+	play(PLACEHOLDER_DANCE_ANIM, true)
+	#if cur_time - _last_dance_time > _time_until_dance:
+		#_last_dance_time = cur_time
+		#
+		#if animation_player.is_playing() and animation_player.current_animation == PLACEHOLDER_DANCE_ANIM:
+			#return
+		#
+		#play(PLACEHOLDER_DANCE_ANIM, true)
 
-func dance() -> void:
-	pass
+func _handler_released() -> void:
+	_released_note = true
 
 func play(anim_name:StringName, warn_missing_animation:bool = false) -> void:
 	if animation_player == null:
