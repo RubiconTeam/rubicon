@@ -68,8 +68,11 @@ enum Judgment {
 }
 
 enum Hit {
+	## The note has not been hit and the result was most likely returned unnaturally.
 	HIT_NONE = 0,
+	## The note is being held.
 	HIT_INCOMPLETE = 1,
+	## The note has either been hit, or a hold note has just finished.
 	HIT_COMPLETE = 2
 }
 
