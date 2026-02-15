@@ -44,9 +44,6 @@ var health:float:
 			health = min_health
 			health_depleted.emit()
 			return
-		elif value > max_health:
-			health = max_health
-			return
 		
 		health = value
 
