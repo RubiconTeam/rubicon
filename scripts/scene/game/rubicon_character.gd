@@ -1,6 +1,36 @@
 @tool
 class_name RubiconCharacter extends Node
 
+@export var animation_player:AnimationPlayer:
+	set(value):
+		animation_player = value
+		notify_property_list_changed()
+		update_configuration_warnings()
+
+@export var level_note_controller : RubiconLevelNoteController:
+	set(value):
+		if is_tree_root and level_note_controller == null:
+			printerr("Not recommended to assign a Note Controller on a character's scene (unless you know what you're doing!)")
+		
+		if value != level_note_controller and level_note_controller != null:
+			
+			if level_note_controller.note_changed.is_connected(note_changed):
+				level_note_controller.note_changed.disconnect(note_changed)
+			if level_note_controller.release.is_connected(_handler_released):
+				level_note_controller.release.disconnect(_handler_released)
+			var clock:RubiconLevelClock = level_note_controller.get_level_clock()
+			if clock.step_change.is_connected(step_change):
+				clock.step_change.disconnect(step_change)
+			
+		level_note_controller = value
+		notify_property_list_changed()
+		update_configuration_warnings()
+			
+		if level_note_controller != null:
+			level_note_controller.note_changed.connect(note_changed)
+			level_note_controller.release.connect(_handler_released)
+			level_note_controller.get_level_clock().step_change.connect(step_change)
+
 @export var steps_until_dance : int = 4
 @export var force_dance:bool = true
 @export var should_dance:bool = true
@@ -13,53 +43,21 @@ class_name RubiconCharacter extends Node
 @export_storage var repeat_loop_point:float = 0.125
 @export_storage var step_time_value:float = 1
 
-@export var animation_player:AnimationPlayer:
-	set(value):
-		animation_player = value
-		notify_property_list_changed()
-		update_configuration_warnings()
-
-@export_group("Level-only References", "level_")
-@export var level_note_controller : RubiconLevelNoteController:
-	set(value):
-		if is_tree_root and level_note_controller == null:
-			printerr("Not recommended to assign a Note Controller on a character's scene (unless you know what you're doing!)")
-		
-		if value != level_note_controller and level_note_controller != null:
-			if level_note_controller.note_changed.is_connected(note_changed):
-				level_note_controller.note_changed.disconnect(note_changed)
-			if level_note_controller.release.is_connected(_handler_released):
-				level_note_controller.release.disconnect(_handler_released)
-			
-		level_note_controller = value
-		notify_property_list_changed()
-		update_configuration_warnings()
-			
-		if level_note_controller != null:
-			level_note_controller.note_changed.connect(note_changed)
-			level_note_controller.release.connect(_handler_released)
-
-var camera_point:Marker2D:
-	get():
-		if camera_point_path.is_empty() or camera_point_path == null:
-			return null
-		update_configuration_warnings()
-		return get_node(camera_point_path)
-
-var camera_point_path:NodePath
-var camera_point_offset:Vector2
-
 var state:CharacterState = CharacterState.STATE_DANCING
 
 var _last_result:RubiconLevelNoteHitResult
 var _last_sing_anim:StringName
 var _released_note:bool = true
-var _last_dance_step:float
+var _last_dance_step:int
 
 enum CharacterHoldType {
+	## Characters will play hold notes once, as if it wasn't a hold note.
 	NONE,
+	## Characters will freeze on the first frame, playing the rest of if when the note is released.
 	FREEZE,
+	## Characters will repeat the animation each time current_animation_position goes over repeat_loop_point.
 	REPEAT,
+	## Characters will repeat the animation every step, executed in step_change().
 	STEP_REPEAT,
 }
 
@@ -94,9 +92,9 @@ func note_changed(result:RubiconLevelNoteHitResult, has_ending_row:bool = false)
 				state = CharacterState.STATE_HOLDING
 			
 			RubiconLevelNoteHitResult.Hit.HIT_COMPLETE:
-				if has_ending_row and hold_type != CharacterHoldType.FREEZE and result.scoring_rating != RubiconLevelNoteHitResult.Judgment.JUDGMENT_MISS:
-					return
 				state = CharacterState.STATE_SINGING
+				if has_ending_row and hold_type != CharacterHoldType.FREEZE:
+					return
 				
 				play(_last_sing_anim, true)
 
@@ -117,23 +115,31 @@ func _process(delta: float) -> void:
 
 func step_change() -> void:
 	if state == CharacterState.STATE_HOLDING and hold_type == CharacterHoldType.STEP_REPEAT:
-		#step repeat code i dont wanna do rn
-		pass
+		# TODO: execute accordingly to step_time_value
+		play(_last_sing_anim, true)
 	
 	if level_note_controller == null or animation_player == null:
 		return
 	
-	play(PLACEHOLDER_DANCE_ANIM, true)
-	#if cur_time - _last_dance_time > _time_until_dance:
-		#_last_dance_time = cur_time
-		#
-		#if animation_player.is_playing() and animation_player.current_animation == PLACEHOLDER_DANCE_ANIM:
-			#return
-		#
-		#play(PLACEHOLDER_DANCE_ANIM, true)
+	if should_dance:
+		var cur_step:int = floori(level_note_controller.get_level_clock().time_step)
+		if abs(cur_step - _last_dance_step) >= steps_until_dance:
+			state = CharacterState.STATE_DANCING
+		
+		if state == CharacterState.STATE_DANCING:
+			print("dance!")
+			if animation_player.is_playing() and animation_player.current_animation == PLACEHOLDER_DANCE_ANIM and !force_dance:
+				return
+			print("dancing!")
+			
+			_last_dance_step = cur_step
+			state = CharacterState.STATE_RESTING
+			play(PLACEHOLDER_DANCE_ANIM, true)
+			
 
 func _handler_released() -> void:
-	_released_note = true
+	pass
+	#_released_note = true
 
 func play(anim_name:StringName, warn_missing_animation:bool = false) -> void:
 	if animation_player == null:
@@ -205,10 +211,7 @@ func _get_configuration_warnings() -> PackedStringArray:
 	
 	if !is_tree_root and level_note_controller == null:
 		warnings.append(tr("Characters require a note controller to work. Make sure to assign one under the character's properties"))
-	
-	if !is_tree_root and (camera_point == null or camera_point_path.is_empty()):
-		warnings.append(tr("No camera point assigned. Cameras will ignore the character when supposed to aim at it."))
-	
+
 	return warnings
 
 func _get_property_list() -> Array[Dictionary]:
@@ -227,22 +230,6 @@ func _get_property_list() -> Array[Dictionary]:
 				type = TYPE_FLOAT,
 				usage = PROPERTY_USAGE_EDITOR
 			})
-	
-	
-	if !is_tree_root:
-		properties.append({
-			name = &"_camera_point",
-			type = TYPE_NODE_PATH,
-			hint = PROPERTY_HINT_NODE_PATH_VALID_TYPES,
-			hint_string = "Marker2D", 
-			usage = PROPERTY_USAGE_DEFAULT
-		})
-		
-		properties.append({
-			name = &"_camera_point_offset",
-			type = TYPE_VECTOR2,
-			usage = PROPERTY_USAGE_DEFAULT
-		})
 	
 	if animation_player != null:
 		properties.append({
