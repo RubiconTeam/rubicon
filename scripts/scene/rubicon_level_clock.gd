@@ -50,6 +50,14 @@ var _animation_player : AnimationPlayer
 var _current_frame_time : float
 var _relative_time_offset : float
 
+var _last_step:int = -1
+var _last_beat:int = -1
+var _last_measure:int = -1
+
+signal step_change
+signal beat_change
+signal measure_change
+
 func get_time_precise() -> float:
 	return _current_frame_time + (Time.get_unix_time_from_system() - _relative_time_offset) * 1000.0
 
@@ -66,6 +74,24 @@ func _validate_property(property: Dictionary) -> void:
 func _process(delta: float) -> void:
 	_current_frame_time = time_milliseconds
 	_relative_time_offset = Time.get_unix_time_from_system()
+	
+	if step_change.has_connections():
+		var cur_step:int = floori(time_step)
+		if cur_step != _last_step:
+			_last_step = cur_step
+			step_change.emit()
+			
+	if beat_change.has_connections():
+		var cur_beat:int = floori(time_beat)
+		if cur_beat != _last_beat:
+			_last_beat = cur_beat
+			beat_change.emit()
+			
+	if measure_change.has_connections():
+		var cur_measure:int = floori(time_measure)
+		if cur_measure != _last_measure:
+			_last_measure = cur_measure
+			measure_change.emit()
 
 func _notification(what: int) -> void:
 	match what:
