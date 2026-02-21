@@ -112,9 +112,11 @@ _data = {
 &"sing_up": SubResource("Animation_pp1a3")
 }
 
-[node name="GigiPlaceholder" type="Node2D" node_paths=PackedStringArray("animation_player")]
+[node name="GigiPlaceholder" type="Node2D" unique_id=1194220676 node_paths=PackedStringArray("animation_player")]
 script = ExtResource("1_snahq")
 animation_player = NodePath("RootAnimationPlayer")
+animation_steps_until_dance = 8
+animation_hold_type = 2
 animations = Dictionary[StringName, StringName]({
 &"miss_down": &"miss",
 &"miss_left": &"miss",
@@ -128,20 +130,16 @@ animations = Dictionary[StringName, StringName]({
 &"sing_up": &"sing_up"
 })
 
-[node name="Sprite" type="AnimatedSprite2D" parent="."]
+[node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=1348056557]
 texture_filter = 1
 position = Vector2(36.000008, -390)
 scale = Vector2(5, 5)
 sprite_frames = ExtResource("2_5ui0e")
 animation = &"idle"
 
-[node name="SpriteAnimationPlayer" type="AnimationPlayer" parent="Sprite"]
-libraries = {
-&"gigi_placeholder_library": ExtResource("3_s0343")
-}
+[node name="SpriteAnimationPlayer" type="AnimationPlayer" parent="Sprite" unique_id=1261878614]
+libraries/gigi_placeholder_library = ExtResource("3_s0343")
 speed_scale = 0.5
 
-[node name="RootAnimationPlayer" type="AnimationPlayer" parent="."]
-libraries = {
-&"": SubResource("AnimationLibrary_bxco1")
-}
+[node name="RootAnimationPlayer" type="AnimationPlayer" parent="." unique_id=766820809]
+libraries/ = SubResource("AnimationLibrary_bxco1")

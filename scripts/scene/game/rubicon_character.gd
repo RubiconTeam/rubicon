@@ -31,19 +31,20 @@ class_name RubiconCharacter extends Node
 			level_note_controller.release.connect(_handler_released)
 			level_note_controller.get_level_clock().step_change.connect(step_change)
 
-@export var steps_until_dance : int = 4
-@export var force_dance:bool = true
-@export var should_dance:bool = true
-@export var should_sing:bool = true
+@export_group("Animation Settings", "animation_")
+@export var animation_steps_until_dance : int = 4
+@export var animation_force_dance:bool = true
+@export var animation_should_dance:bool = true
+@export var animation_should_sing:bool = true
 
-@export var hold_type:CharacterHoldType = CharacterHoldType.FREEZE:
+@export var animation_hold_type:CharacterHoldType = CharacterHoldType.STEP_REPEAT:
 	set(value):
-		hold_type = value
+		animation_hold_type = value
 		notify_property_list_changed()
-@export_storage var repeat_loop_point:float = 0.125
-@export_storage var step_time_value:float = 1
+@export_storage var animation_repeat_loop_point:float = 0.125
+@export_storage var animation_step_time_value:float = 1
 
-var state:CharacterState = CharacterState.STATE_DANCING
+@export var state:CharacterState = CharacterState.STATE_DANCING
 
 var _last_result:RubiconLevelNoteHitResult
 var _last_sing_anim:StringName
@@ -80,7 +81,7 @@ func note_changed(result:RubiconLevelNoteHitResult, has_ending_row:bool = false)
 		state = CharacterState.STATE_RESTING
 		return
 	
-	if should_sing:
+	if animation_should_sing:
 		_last_result = result
 		_last_sing_anim = get_anim_alias_from_result(_last_result)
 		
@@ -93,7 +94,7 @@ func note_changed(result:RubiconLevelNoteHitResult, has_ending_row:bool = false)
 			
 			RubiconLevelNoteHitResult.Hit.HIT_COMPLETE:
 				state = CharacterState.STATE_SINGING
-				if has_ending_row and hold_type != CharacterHoldType.FREEZE:
+				if has_ending_row and animation_hold_type != CharacterHoldType.FREEZE:
 					return
 				
 				play(_last_sing_anim, true)
@@ -101,41 +102,37 @@ func note_changed(result:RubiconLevelNoteHitResult, has_ending_row:bool = false)
 const PLACEHOLDER_DANCE_ANIM = "dance_idle"
 func _process(delta: float) -> void:
 	if state == CharacterState.STATE_HOLDING:
-		match hold_type:
+		match animation_hold_type:
 			CharacterHoldType.NONE:
 				state = CharacterState.STATE_RESTING
 			CharacterHoldType.FREEZE:
-				animation_player.stop()
 				play(_last_sing_anim, true)
 				animation_player.pause()
 				state = CharacterState.STATE_RESTING
 			CharacterHoldType.REPEAT:
-				if animation_player.current_animation_position > repeat_loop_point:
+				if animation_player.current_animation_position > animation_repeat_loop_point:
 					play(_last_sing_anim, true)
 
 func step_change() -> void:
-	if state == CharacterState.STATE_HOLDING and hold_type == CharacterHoldType.STEP_REPEAT:
-		# TODO: execute accordingly to step_time_value
-		play(_last_sing_anim, true)
-	
 	if level_note_controller == null or animation_player == null:
 		return
 	
-	if should_dance:
+	if state == CharacterState.STATE_HOLDING and animation_hold_type == CharacterHoldType.STEP_REPEAT:
+		# TODO: execute accordingly to step_time_value
+		play(_last_sing_anim, true)
+	
+	if animation_should_dance:
 		var cur_step:int = floori(level_note_controller.get_level_clock().time_step)
-		if abs(cur_step - _last_dance_step) >= steps_until_dance:
+		if abs(cur_step - _last_dance_step) >= animation_steps_until_dance:
 			state = CharacterState.STATE_DANCING
 		
 		if state == CharacterState.STATE_DANCING:
-			print("dance!")
-			if animation_player.is_playing() and animation_player.current_animation == PLACEHOLDER_DANCE_ANIM and !force_dance:
+			if animation_player.is_playing() and animation_player.current_animation == PLACEHOLDER_DANCE_ANIM and !animation_force_dance:
 				return
-			print("dancing!")
 			
 			_last_dance_step = cur_step
 			state = CharacterState.STATE_RESTING
 			play(PLACEHOLDER_DANCE_ANIM, true)
-			
 
 func _handler_released() -> void:
 	pass
@@ -151,6 +148,7 @@ func play(anim_name:StringName, warn_missing_animation:bool = false) -> void:
 			printerr('No animation "'+anim_name+'" found in character: ' + scene_file_path.get_file())
 		return
 	
+	animation_player.stop()
 	animation_player.play(anim_name)
 	animation_player.seek(0.0, true)
 
@@ -217,16 +215,30 @@ func _get_configuration_warnings() -> PackedStringArray:
 func _get_property_list() -> Array[Dictionary]:
 	var properties:Array[Dictionary]
 	
-	match hold_type:
+	match animation_hold_type:
 		CharacterHoldType.REPEAT:
 			properties.append({
-				name = &"repeat_loop_point",
+				name = &"Animation Settings",
+				type = TYPE_NIL,
+				usage = PROPERTY_USAGE_GROUP,
+				hint_string = "animation_",
+			})
+			
+			properties.append({
+				name = &"animation_repeat_loop_point",
 				type = TYPE_FLOAT,
 				usage = PROPERTY_USAGE_EDITOR
 			})
 		CharacterHoldType.STEP_REPEAT:
 			properties.append({
-				name = &"step_time_value",
+				name = &"Animation Settings",
+				type = TYPE_NIL,
+				usage = PROPERTY_USAGE_GROUP,
+				hint_string = "animation_",
+			})
+			
+			properties.append({
+				name = &"animation_step_time_value",
 				type = TYPE_FLOAT,
 				usage = PROPERTY_USAGE_EDITOR
 			})
