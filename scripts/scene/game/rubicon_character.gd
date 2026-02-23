@@ -122,7 +122,7 @@ func _process(delta: float) -> void:
 			state = CharacterState.STATE_RESTING
 	
 	if state == CharacterState.STATE_HOLDING and animation_hold_type == CharacterHoldType.REPEAT:
-		if animation_player.current_animation_position > animation_repeat_loop_point:
+		if animation_player.is_playing() and animation_player.current_animation_position > animation_repeat_loop_point:
 			play(_last_sing_anim, true)
 	
 	if state == CharacterState.STATE_DANCING:
