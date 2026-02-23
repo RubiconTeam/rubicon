@@ -14,6 +14,7 @@ var results : Array[RubiconLevelNoteHitResult]
 var note_spawn_start : int = 0
 var note_spawn_end : int = 0
 var note_hit_index : int = 0
+var last_hit_note_index : int = 0
 
 var _controller : RubiconLevelNoteController
 var _note_pool : Dictionary[StringName, Array]
@@ -40,6 +41,8 @@ func update_notes() -> void:
 	note_spawn_start = 0
 	note_spawn_end = 0
 	note_hit_index = 0
+	last_hit_note_index = 0
+
 	for i in data.size():
 		if graphics[i] == null:
 			continue
@@ -134,6 +137,8 @@ func hit_note(index : int, time_when_hit : float, hit_type : RubiconLevelNoteHit
 	var note_type : StringName = data[index].type
 	var define_key : StringName = "%s_%s" % [note_type, get_mode_id()] if not note_type.is_empty() else get_mode_id()
 	get_controller().get_note_database()[define_key].note_hit(result)
+
+	last_hit_note_index = index
 	results[index] = result
 
 func _notification(what: int) -> void:
@@ -230,6 +235,8 @@ func _is_inside_of_incomplete_note(millisecond_position : float) -> bool:
 
 func _roll_hit_back() -> void:
 	note_hit_index -= 1
+	last_hit_note_index -= 1
+
 	get_controller().note_changed.emit(results[note_hit_index])
 	results[note_hit_index].reset(RubiconLevelNoteHitResult.Hit.HIT_NONE)
 	
