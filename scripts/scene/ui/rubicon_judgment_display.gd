@@ -42,4 +42,4 @@ func note_changed(result:RubiconLevelNoteHitResult, has_ending_row:bool = false)
 	if result != null and result.scoring_hit != RubiconLevelNoteHitResult.Hit.HIT_COMPLETE:
 		return
 	
-	$Label.text = str(result.Judgment.find_key(result.scoring_rating))
+	$Label.text = str(result.Judgment.find_key(result.scoring_rating)).erase(0, 9)
