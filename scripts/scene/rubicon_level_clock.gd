@@ -16,7 +16,7 @@ class_name RubiconLevelClock extends Node
 		if not is_on_animation:
 			return
 		
-		_animation_player.seek(val - offset, true)
+		_animation_player.seek((val / 1000.0) - offset)
 
 @export var time_measure : float:
 	get:
