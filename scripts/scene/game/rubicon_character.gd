@@ -81,6 +81,9 @@ func _valid_references() -> bool:
 	return _valid_controller() and animation_player != null
 
 func note_changed(result:RubiconLevelNoteHitResult, has_ending_row:bool = false) -> void:
+	if not animation_should_sing:
+		return
+	
 	if state == CharacterState.STATE_OVERRIDE or !_valid_controller():
 		return
 	
@@ -88,44 +91,44 @@ func note_changed(result:RubiconLevelNoteHitResult, has_ending_row:bool = false)
 		state = CharacterState.STATE_RESTING
 		return
 	
-	if animation_should_sing:
-		_last_result = result
-		_last_sing_anim = get_anim_alias_from_result(_last_result)
-		_last_sing_step = floori(level_note_controller.get_level_clock().time_step)
-		
-		#_released_note = result.scoring_rating == RubiconLevelNoteHitResult.Judgment.JUDGMENT_MISS
-		
-		match result.scoring_hit:
-			RubiconLevelNoteHitResult.Hit.HIT_INCOMPLETE:
-				play(_last_sing_anim, true)
-				state = CharacterState.STATE_HOLDING
-				
-				if animation_hold_type == CharacterHoldType.FREEZE:
-					play(_last_sing_anim, true)
-					animation_player.pause()
+	_last_result = result
+	_last_sing_anim = get_anim_alias_from_result(_last_result)
+	_last_sing_step = floori(level_note_controller.get_level_clock().time_step)
+	
+	#_released_note = result.scoring_rating == RubiconLevelNoteHitResult.Judgment.JUDGMENT_MISS
+	
+	match result.scoring_hit:
+		RubiconLevelNoteHitResult.Hit.HIT_INCOMPLETE:
+			play(_last_sing_anim, true)
+			state = CharacterState.STATE_HOLDING
 			
-			RubiconLevelNoteHitResult.Hit.HIT_COMPLETE:
-				state = CharacterState.STATE_SINGING
-				if has_ending_row and animation_hold_type != CharacterHoldType.FREEZE:
-					return
-				
+			if animation_hold_type == CharacterHoldType.FREEZE:
 				play(_last_sing_anim, true)
+				animation_player.pause()
+		
+		RubiconLevelNoteHitResult.Hit.HIT_COMPLETE:
+			state = CharacterState.STATE_SINGING
+			if has_ending_row and animation_hold_type != CharacterHoldType.FREEZE:
+				return
+			
+			play(_last_sing_anim, true)
 
 const PLACEHOLDER_DANCE_ANIM = "dance_idle"
 func _process(delta: float) -> void:
 	if !_valid_references():
 		return
 	
-	if state == CharacterState.STATE_SINGING:
-		var cur_step:int = floori(level_note_controller.get_level_clock().time_step)
-		if abs(cur_step - _last_sing_step) >= animation_sing_to_dance_interval:
-			state = CharacterState.STATE_RESTING
+	if animation_should_sing:
+		if state == CharacterState.STATE_SINGING:
+			var cur_step:int = floori(level_note_controller.get_level_clock().time_step)
+			if abs(cur_step - _last_sing_step) >= animation_sing_to_dance_interval:
+				state = CharacterState.STATE_RESTING
+		
+		if state == CharacterState.STATE_HOLDING and animation_hold_type == CharacterHoldType.REPEAT:
+			if animation_player.is_playing() and animation_player.current_animation_position > animation_repeat_loop_point:
+				play(_last_sing_anim, true)
 	
-	if state == CharacterState.STATE_HOLDING and animation_hold_type == CharacterHoldType.REPEAT:
-		if animation_player.is_playing() and animation_player.current_animation_position > animation_repeat_loop_point:
-			play(_last_sing_anim, true)
-	
-	if state == CharacterState.STATE_DANCING:
+	if animation_should_dance and state == CharacterState.STATE_DANCING:
 		if animation_player.is_playing() and animation_player.current_animation == PLACEHOLDER_DANCE_ANIM and !animation_force_dance:
 			return
 			
@@ -137,7 +140,7 @@ func step_change() -> void:
 	if !_valid_references():
 		return
 	
-	if state == CharacterState.STATE_HOLDING and animation_hold_type == CharacterHoldType.STEP_REPEAT:
+	if animation_should_sing and state == CharacterState.STATE_HOLDING and animation_hold_type == CharacterHoldType.STEP_REPEAT:
 		# TODO: execute accordingly to step_time_value
 		play(_last_sing_anim, true)
 	
