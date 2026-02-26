@@ -24,6 +24,8 @@ class_name RubiconCharacter extends Node
 			var clock:RubiconLevelClock = level_note_controller.get_level_clock()
 			if clock.step_change.is_connected(step_change):
 				clock.step_change.disconnect(step_change)
+			if clock.animation_player.animation_started.is_connected(song_started):
+				clock.animation_player.animation_started.disconnect(song_started)
 			
 		level_note_controller = value
 		notify_property_list_changed()
@@ -32,7 +34,9 @@ class_name RubiconCharacter extends Node
 		if level_note_controller != null:
 			level_note_controller.note_changed.connect(note_changed)
 			level_note_controller.release.connect(_handler_released)
-			level_note_controller.get_level_clock().step_change.connect(step_change)
+			var clock:RubiconLevelClock = level_note_controller.get_level_clock()
+			clock.step_change.connect(step_change)
+			clock.animation_player.animation_started.connect(song_started)
 
 @export_group("Animation Settings", "animation_")
 @export var animation_dance_step_interval:int = 8
@@ -146,6 +150,11 @@ func step_change() -> void:
 		if state == CharacterState.STATE_RESTING:
 			if cur_step % animation_dance_step_interval == 0:
 				state = CharacterState.STATE_DANCING
+
+func song_started(anim_name:StringName) -> void:
+	print("start song")
+	if state != CharacterState.STATE_OVERRIDE:
+		state = CharacterState.STATE_DANCING
 
 func _handler_released() -> void:
 	pass
