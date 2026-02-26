@@ -50,7 +50,7 @@ static func get_millisecond_at_beat(time_changes : Array[RubiconTimeChange], bea
 	return get_millisecond_at_measure(time_changes, get_measure_at_beat(time_changes, beat))
 
 static func get_millisecond_at_step(time_changes : Array[RubiconTimeChange], step : float) -> float:
-	return get_millisecond_at_measure(time_changes, get_measure_at_beat(time_changes, step))
+	return get_millisecond_at_measure(time_changes, get_measure_at_step(time_changes, step))
 
 static func get_measure_at_millisecond(time_changes : Array[RubiconTimeChange], millisecond : float) -> float:
 	for i: int in time_changes.size():
