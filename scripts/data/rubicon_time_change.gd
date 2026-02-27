@@ -38,11 +38,17 @@ static func get_time_change_at_step(time_changes : Array[RubiconTimeChange], ste
 	return get_time_change_at_measure(time_changes, get_measure_at_step(time_changes, step))
 
 static func get_millisecond_at_measure(time_changes : Array[RubiconTimeChange], measure : float) -> float:
-	for current in time_changes:
-		if measure < current.measure:
+	if time_changes.size() == 1:
+		return RubiconLevelClock.measure_to_millisecond(measure, time_changes[0].bpm, time_changes[0].time_signature_numerator)
+
+	for i in range(1, time_changes.size()):
+		var current : RubiconTimeChange = time_changes[i]
+		if measure > current.measure:
 			continue
 		
-		return current.millisecond_time + RubiconLevelClock.measure_to_millisecond(measure - current.measure, current.bpm, current.time_signature_numerator)
+		
+		var previous : RubiconTimeChange = time_changes[i - 1]
+		return previous.millisecond_time + RubiconLevelClock.measure_to_millisecond(measure - previous.measure, previous.bpm, previous.time_signature_numerator)
 	
 	return 0
 
@@ -57,6 +63,7 @@ static func get_measure_at_millisecond(time_changes : Array[RubiconTimeChange], 
 		var current: RubiconTimeChange = time_changes[i]
 		if millisecond < current.millisecond_time:
 			continue
+		
 		if i < time_changes.size() - 1 and millisecond >= time_changes[i + 1].millisecond_time:
 			continue
 		

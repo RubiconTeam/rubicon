@@ -16,7 +16,7 @@ enum Quant
 	RUBICHART_QUANT_32 = 32,
 	RUBICHART_QUANT_48 = 48,
 	RUBICHART_QUANT_64 = 64,
-	RUBICHART_QUANT_128 = 128,
+	RUBICHART_QUANT_128 = 128
 }
 
 static var quants : Array[Quant] = [
@@ -36,6 +36,8 @@ static var quants : Array[Quant] = [
 @export var scroll_velocities : Array[RubiChartScrollVelocity] = [RubiChartScrollVelocity.new()]
 
 func initialize(time_changes : Array[RubiconTimeChange]) -> void:
+	RubiconTimeChange.update(time_changes)
+
 	for section in sections:
 		section.chart = self
 		

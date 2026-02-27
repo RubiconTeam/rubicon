@@ -81,7 +81,7 @@ func get_note_database() -> Dictionary[StringName, RubiconLevelNoteMetadata]:
 
 func update_chart() -> void:
 	var metadata : RubiconLevelMetadata = get_level_metadata()
-	if metadata == null:
+	if metadata == null or metadata.time_changes.is_empty():
 		return
 	
 	_chart.initialize(metadata.time_changes)
