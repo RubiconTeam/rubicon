@@ -130,7 +130,7 @@ func _get_configuration_warnings() -> PackedStringArray:
 	return warnings
 
 static func measure_to_millisecond(measure : float, bpm : float, time_signature_numerator : float) -> float:
-	return measure * (60000.0 / (bpm / time_signature_numerator))
+	return measure * ((60000.0 / bpm) * time_signature_numerator)
 
 static func beats_to_millisecond(beat : float, bpm : float) -> float:
 	return beat * (60000.0 / bpm)
