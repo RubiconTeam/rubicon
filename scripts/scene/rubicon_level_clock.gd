@@ -6,13 +6,17 @@ class_name RubiconLevelClock extends Node
 @export_group("Time", "time_")
 @export var time_milliseconds : float:
 	get:
-		var is_on_animation : bool = animation_player != null and (not animation_player.assigned_animation.is_empty() or animation_player.is_playing())
+
+		# Empty Animation Error Fix
+		var is_on_animation : bool = animation_player != null and (not animation_player.current_animation.is_empty() or animation_player.is_playing())
 		if not is_on_animation:
 			return 0
 		
 		return maxf((_animation_player.current_animation_position + offset) * 1000.0, 0.0)
 	set(val):
-		var is_on_animation : bool = animation_player != null and (not animation_player.assigned_animation.is_empty() or animation_player.is_playing())
+
+		# Empty Animation Error Fix
+		var is_on_animation : bool = animation_player != null and (not animation_player.current_animation.is_empty() or animation_player.is_playing())
 		if not is_on_animation:
 			return
 		
