@@ -76,7 +76,7 @@ func spawn_note(index : int) -> void:
 	
 	add_child(graphic)
 	if Engine.is_editor_hint():
-		graphic.owner = self
+		graphic.owner = get_tree().edited_scene_root
 	sort_graphic(index)
 
 func despawn_note(index : int) -> void:

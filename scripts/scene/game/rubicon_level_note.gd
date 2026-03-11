@@ -46,13 +46,12 @@ func _should_process() -> bool:
 func _notification(what: int) -> void:
 	match what:
 		NOTIFICATION_EDITOR_PRE_SAVE:
-			if not is_runtime_note:
+			if is_runtime_note:
 				return
 			
-			_cached_owner = owner
 			owner = null
 		NOTIFICATION_EDITOR_POST_SAVE:
-			if not is_runtime_note:
+			if is_runtime_note:
 				return
 			
-			owner = _cached_owner
+			owner = get_tree().edited_scene_root
