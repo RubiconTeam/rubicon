@@ -1,11 +1,13 @@
 @tool
 extends EditorPlugin
-class_name RubiconPlugin
 
 const CREATE_CONTEXT_MENU_PLUGIN = preload("res://addons/rubicon/scripts/create_context_menu_plugin.gd")
 var _instance:EditorContextMenuPlugin
 
-static var playtesting_level:bool = false
+var playtesting_level:bool = false:
+	set(value):
+		playtesting_level = value
+		RubiconLevelNoteController.is_playtesting = value
 var playtest_checkbox:CheckBox
 
 func _enter_tree() -> void:
@@ -22,7 +24,7 @@ func _enter_tree() -> void:
 	add_context_menu_plugin(EditorContextMenuPlugin.CONTEXT_SLOT_FILESYSTEM_CREATE, _instance)
 	
 	playtest_checkbox = CheckBox.new()
-	playtest_checkbox.text = "Playtest Level (PROTOTYPE)"
+	playtest_checkbox.text = "Playtest Level"
 	playtest_checkbox.connect("pressed", playtest_checked)
 	
 	connect("scene_changed", _scene_changed)
@@ -47,9 +49,9 @@ func add_project_setting(name : String, type : Variant.Type, hint : PropertyHint
 
 func _popup_menu(paths:PackedStringArray) -> void:
 	var scene_icon:Texture2D = EditorInterface.get_editor_theme().get_icon(&"PackedScene",&"EditorIcons")
-	var create_simple_character_callable:Callable = Callable(self, "_create_popup").bind(_instance.CREATE_SIMPLE_CHARACTER_POPUP, _instance._create_simple_character)
+	var create_character_callable:Callable = Callable(self, "_create_popup").bind(_instance.CREATE_CHARACTER_POPUP, _instance._create_simple_character)
 	
-	_instance.add_context_menu_item("Character... (Simple)", create_simple_character_callable, scene_icon)
+	_instance.add_context_menu_item("Character...", create_character_callable, scene_icon)
 
 func _create_popup(paths:PackedStringArray, popup_scene:PackedScene, confirm_call:Callable) -> void:
 	var screen_scale:float = DisplayServer.screen_get_scale()
@@ -58,7 +60,7 @@ func _create_popup(paths:PackedStringArray, popup_scene:PackedScene, confirm_cal
 	instance.content_scale_factor = screen_scale
 	add_child(instance)
 	instance.popup_centered(instance.size * DisplayServer.screen_get_scale())
-	instance.confirmed.connect(func(): confirm_call.call(instance.base_path, instance._name))
+	instance.confirmed.connect(func(): confirm_call.call(instance.base_path, instance._name, instance._selected_type, instance.sprite_frames_path.text, instance.animation_library_path.text))
 
 func _scene_changed(scene_root:Node) -> void:
 	if scene_root is RubiconLevel:
