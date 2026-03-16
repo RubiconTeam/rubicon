@@ -69,6 +69,8 @@ var _level : RubiconLevel
 var _override_note_database : RubiconLevelNoteDatabase
 var _internal_note_database : Dictionary[StringName, RubiconLevelNoteMetadata]
 
+static var is_playtesting:bool
+
 signal note_changed(result:RubiconLevelNoteHitResult, has_ending_row:bool)
 signal press
 signal release
@@ -159,7 +161,7 @@ func _notification(what: int) -> void:
 				parent = parent.get_parent()
 
 func should_autoplay() -> bool:
-	return autoplay or (preview_as_autoplay and Engine.is_editor_hint() and !RubiconPlugin.playtesting_level)
+	return autoplay or (preview_as_autoplay and Engine.is_editor_hint() and !is_playtesting)
 
 func _input(event: InputEvent) -> void:
 	if should_autoplay() or event.is_echo() or inputs == null or not inputs.has_event_registered(event):
