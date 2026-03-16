@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://cssfk3u4d5q1x"]
 
 [ext_resource type="Script" uid="uid://dqqqiv8d0q8gc" path="res://addons/rubicon/scripts/scene/game/rubicon_character.gd" id="1_snahq"]
-[ext_resource type="SpriteFrames" uid="uid://7h5xqubgdxam" path="res://addons/rubicon/assets/levels/characters/gigi_placeholder/gigi_placeholder.tres" id="2_5ui0e"]
+[ext_resource type="SpriteFrames" uid="uid://8g0j65fnjvxo" path="res://addons/rubicon/assets/levels/characters/gigi_placeholder/gigi_placeholder.tres" id="2_5ui0e"]
 [ext_resource type="AnimationLibrary" uid="uid://b0vhbwobnaic7" path="res://addons/rubicon/assets/levels/characters/gigi_placeholder/gigi_placeholder_library.tres" id="3_s0343"]
 
 [sub_resource type="Animation" id="Animation_4tnaj"]
@@ -115,8 +115,7 @@ _data = {
 [node name="GigiPlaceholder" type="Node2D" unique_id=1194220676 node_paths=PackedStringArray("animation_player")]
 script = ExtResource("1_snahq")
 animation_player = NodePath("RootAnimationPlayer")
-animation_steps_until_dance = 8
-animation_hold_type = 2
+dancing_animations = Array[StringName]([&"dance_idle"])
 animations = Dictionary[StringName, StringName]({
 &"miss_down": &"miss",
 &"miss_left": &"miss",
@@ -129,6 +128,7 @@ animations = Dictionary[StringName, StringName]({
 &"sing_sing": &"",
 &"sing_up": &"sing_up"
 })
+dancing_animations = Array[StringName]([&"dance_idle"])
 
 [node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=1348056557]
 texture_filter = 1
