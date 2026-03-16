@@ -3,6 +3,9 @@ class_name RubiconCharacter extends Node
 
 @export var animation_player:AnimationPlayer:
 	set(value):
+		if value == animation_player:
+			return
+		
 		if value != animation_player and animation_player != null:
 			if animation_player.animation_finished.is_connected(note_changed):
 				level_note_controller.note_changed.disconnect(note_changed)
@@ -13,10 +16,13 @@ class_name RubiconCharacter extends Node
 
 @export var level_note_controller : RubiconLevelNoteController:
 	set(value):
+		if value == level_note_controller:
+			return
+		
 		if is_tree_root and level_note_controller == null:
 			printerr("Not recommended to assign a Note Controller on a character's scene (unless you know what you're doing!)")
 		
-		if value != level_note_controller and level_note_controller != null:
+		if level_note_controller != null:
 			if level_note_controller.note_changed.is_connected(note_changed):
 				level_note_controller.note_changed.disconnect(note_changed)
 			if level_note_controller.release.is_connected(_handler_released):
@@ -38,26 +44,42 @@ class_name RubiconCharacter extends Node
 			clock.step_change.connect(step_change)
 			clock.animation_player.animation_started.connect(song_started)
 
-@export_group("Animation Settings", "animation_")
-@export var animation_dance_step_interval:int = 8
-@export var animation_sing_to_dance_interval:int = 4
-@export var animation_force_dance:bool = true
-@export var animation_should_dance:bool = true
-@export var animation_should_sing:bool = true
-
-@export var animation_hold_type:CharacterHoldType = CharacterHoldType.STEP_REPEAT:
+@export_group("Singing", "singing_")
+@export_custom(PROPERTY_HINT_GROUP_ENABLE, "") var singing_should_sing:bool = true
+@export var singing_sing_to_dance_interval:int = 4
+@export var singing_hold_type:CharacterHoldType = CharacterHoldType.STEP_REPEAT:
 	set(value):
-		animation_hold_type = value
+		if value == singing_hold_type:
+			return
+		
+		singing_hold_type = value
 		notify_property_list_changed()
-@export_storage var animation_repeat_loop_point:float = 0.125
-@export_storage var animation_step_time_value:float = 1
+@export_storage var singing_repeat_loop_point:float = 0.125
+@export_storage var singing_step_time_value:float = 1
 
-@export var state:CharacterState = CharacterState.STATE_DANCING
+@export_group("Dancing", "dancing_")
+@export_custom(PROPERTY_HINT_GROUP_ENABLE, "") var dancing_should_dance:bool = true
+@export var dancing_step_interval:int = 8
+@export var dancing_force_dance:bool = true
+@export_storage var dancing_animations:Array[StringName] = []:
+	set(value):
+		if value == dancing_animations:
+			return
+		
+		dancing_animations = value
+		_dance_anim_size = dancing_animations.size()
+		_dance_anim_index = 0
+
+var state:CharacterState = CharacterState.STATE_DANCING
 
 var _last_result:RubiconLevelNoteHitResult
+
 var _last_sing_anim:StringName
 var _last_sing_step:float
+
 var _last_dance_step:int
+var _dance_anim_index:int
+var _dance_anim_size:int
 
 enum CharacterHoldType {
 	## Characters will play hold notes once, as if it wasn't a hold note.
@@ -85,7 +107,7 @@ func _valid_references() -> bool:
 	return _valid_controller() and animation_player != null
 
 func note_changed(result:RubiconLevelNoteHitResult, has_ending_row:bool = false) -> void:
-	if not animation_should_sing:
+	if not singing_should_sing:
 		return
 	
 	if state == CharacterState.STATE_OVERRIDE or !_valid_controller():
@@ -106,13 +128,13 @@ func note_changed(result:RubiconLevelNoteHitResult, has_ending_row:bool = false)
 			play(_last_sing_anim, true)
 			state = CharacterState.STATE_HOLDING
 			
-			if animation_hold_type == CharacterHoldType.FREEZE:
+			if singing_hold_type == CharacterHoldType.FREEZE:
 				play(_last_sing_anim, true)
 				animation_player.pause()
 		
 		RubiconLevelNoteHitResult.Hit.HIT_COMPLETE:
 			state = CharacterState.STATE_SINGING
-			if has_ending_row and animation_hold_type != CharacterHoldType.FREEZE:
+			if has_ending_row and singing_hold_type != CharacterHoldType.FREEZE:
 				return
 			
 			play(_last_sing_anim, true)
@@ -122,46 +144,56 @@ func _process(delta: float) -> void:
 	if !_valid_references():
 		return
 	
-	if animation_should_sing:
+	if singing_should_sing:
 		if state == CharacterState.STATE_SINGING:
 			var cur_step:int = floori(level_note_controller.get_level_clock().time_step)
-			if abs(cur_step - _last_sing_step) >= animation_sing_to_dance_interval:
+			if abs(cur_step - _last_sing_step) >= singing_sing_to_dance_interval:
 				state = CharacterState.STATE_RESTING
 		
-		if state == CharacterState.STATE_HOLDING and animation_hold_type == CharacterHoldType.REPEAT:
-			if animation_player.is_playing() and animation_player.current_animation_position > animation_repeat_loop_point:
+		if state == CharacterState.STATE_HOLDING and singing_hold_type == CharacterHoldType.REPEAT:
+			if animation_player.is_playing() and animation_player.current_animation_position > singing_repeat_loop_point:
 				play(_last_sing_anim, true)
 	
-	if animation_should_dance and state == CharacterState.STATE_DANCING:
-		if animation_player.is_playing() and animation_player.current_animation == PLACEHOLDER_DANCE_ANIM and !animation_force_dance:
+	if dancing_should_dance and state == CharacterState.STATE_DANCING:
+		if animation_player.is_playing() and animation_player.current_animation == PLACEHOLDER_DANCE_ANIM and !dancing_force_dance:
 			return
 			
 		_last_dance_step = floori(level_note_controller.get_level_clock().time_step)
 		state = CharacterState.STATE_RESTING
-		play(PLACEHOLDER_DANCE_ANIM, true)
+		_dance()
 
 func step_change() -> void:
 	if !_valid_references():
 		return
 	
-	if animation_should_sing and state == CharacterState.STATE_HOLDING and animation_hold_type == CharacterHoldType.STEP_REPEAT:
+	if singing_should_sing and state == CharacterState.STATE_HOLDING and singing_hold_type == CharacterHoldType.STEP_REPEAT:
 		# TODO: execute accordingly to step_time_value
 		play(_last_sing_anim, true)
 	
-	if animation_should_dance:
+	if dancing_should_dance:
 		var cur_step:int = floori(level_note_controller.get_level_clock().time_step)
 		if state == CharacterState.STATE_RESTING:
-			if cur_step % animation_dance_step_interval == 0:
+			if cur_step % dancing_step_interval == 0:
 				state = CharacterState.STATE_DANCING
 
 func song_started(anim_name:StringName) -> void:
-	print("start song")
+	_dance_anim_index = 0
 	if state != CharacterState.STATE_OVERRIDE:
 		state = CharacterState.STATE_DANCING
 
 func _handler_released() -> void:
 	pass
 	#_released_note = true
+
+func _dance() -> void:
+	if dancing_animations.is_empty():
+		return
+	
+	var anim:StringName = dancing_animations[_dance_anim_index]
+	if !anim.is_empty() and anim != &"None":
+		play(anim, true)
+	
+	_dance_anim_index = wrapi(_dance_anim_index + 1, 0, _dance_anim_size)
 
 func play(anim_name:StringName, warn_missing_animation:bool = false) -> void:
 	if animation_player == null:
@@ -173,7 +205,6 @@ func play(anim_name:StringName, warn_missing_animation:bool = false) -> void:
 			printerr('No animation "'+anim_name+'" found in character: ' + scene_file_path.get_file())
 		return
 	
-	animation_player.stop()
 	animation_player.play(anim_name)
 	animation_player.seek(0.0, true)
 
@@ -190,7 +221,7 @@ func get_anim_alias_from_result(result:RubiconLevelNoteHitResult) -> StringName:
 	var current_anim : StringName = animations[mode_aliases[current_id]]
 	#temporary
 	if result.scoring_rating == RubiconLevelNoteHitResult.Judgment.JUDGMENT_MISS:
-		current_anim = &"dance_idle"
+		current_anim = PLACEHOLDER_DANCE_ANIM
 	return current_anim
 
 #region Custom Property Handling
@@ -230,45 +261,66 @@ func _get_configuration_warnings() -> PackedStringArray:
 	var warnings:PackedStringArray
 	
 	if animation_player == null:
-		warnings.append(tr("No root animation player assigned. Make sure to assign one under the character's properties"))
+		warnings.append(tr(&"No root animation player assigned. Make sure to assign one under the character's properties"))
 	
 	if !is_tree_root and level_note_controller == null:
-		warnings.append(tr("Characters require a note controller to work. Make sure to assign one under the character's properties"))
-
+		warnings.append(tr(&"Characters require a note controller to work. Make sure to assign one under the character's properties"))
+	
+	if dancing_animations.is_empty():
+		warnings.append(tr(&"There is no current dance animation. Define it in Dancing > Animations"))
+	
+	if animations.has(null) or animations.has(&""):
+		warnings.append(tr(&"One or more animations are null. Set them up on the character's properties."))
+	
 	return warnings
 
 func _get_property_list() -> Array[Dictionary]:
 	var properties:Array[Dictionary]
 	
-	match animation_hold_type:
+	match singing_hold_type:
 		CharacterHoldType.REPEAT:
 			properties.append({
-				name = &"Animation Settings",
+				name = &"Singing",
 				type = TYPE_NIL,
 				usage = PROPERTY_USAGE_GROUP,
-				hint_string = "animation_",
+				hint_string = "singing_",
 			})
 			
 			properties.append({
-				name = &"animation_repeat_loop_point",
+				name = &"singing_repeat_loop_point",
 				type = TYPE_FLOAT,
 				usage = PROPERTY_USAGE_EDITOR
 			})
 		CharacterHoldType.STEP_REPEAT:
 			properties.append({
-				name = &"Animation Settings",
+				name = &"Singing",
 				type = TYPE_NIL,
 				usage = PROPERTY_USAGE_GROUP,
-				hint_string = "animation_",
+				hint_string = "singing_",
 			})
 			
 			properties.append({
-				name = &"animation_step_time_value",
+				name = &"singing_step_time_value",
 				type = TYPE_FLOAT,
 				usage = PROPERTY_USAGE_EDITOR
 			})
 	
 	if animation_player != null:
+		properties.append({
+			name = &"Dancing",
+			type = TYPE_NIL,
+			usage = PROPERTY_USAGE_GROUP,
+			hint_string = "dancing_",
+		})
+		
+		properties.append({
+			name = &"dancing_animations",
+			type = TYPE_ARRAY,
+			usage = PROPERTY_USAGE_DEFAULT,
+			hint = PROPERTY_HINT_TYPE_STRING,
+			hint_string = "%d/%d:%s" % [TYPE_STRING_NAME, PROPERTY_HINT_ENUM, ",".join(anim_player_list)],
+		})
+		
 		properties.append({
 			name = &"Animation Setup",
 			type = TYPE_NIL,
@@ -376,7 +428,7 @@ func add_animation_group() -> void:
 
 func _get(property: StringName) -> Variant:
 	if property.begins_with("sing_") or property.begins_with("miss_"):
-		if animations[property].is_empty():
+		if !animations.has(property):
 			return "None"
 		if animations.has(property):
 			if !anim_player_list.has(animations[property]):
@@ -389,16 +441,29 @@ func _get(property: StringName) -> Variant:
 		var callable = Callable(self, "remove_mode").bind(split_name[2])
 		return callable
 	
+	if property == &"dancing_animations":
+		return dancing_animations
+	
 	return null
 
 func _set(property: StringName, value: Variant) -> bool:
-	if (property.begins_with("sing_") or property.begins_with("miss_")) and value != null:
-		if value.to_lower() == "none":
+	if (property.begins_with("sing_") or property.begins_with("miss_")):
+		if value == null:
+			animations[property] = &"None"
+		
+		if get(property) == value:
+			return true
+		
+		if value.to_lower() == &"none":
 			animations[property] = ""
 			return true
 		
 		animations[property] = value
 		return true
+	
+	#if property == &"dancing_animations":
+		#dancing_animations = value
+		#return true
 	
 	return false
 
@@ -450,5 +515,5 @@ func _property_get_revert(property: StringName) -> Variant:
 		#&"step_time_value":
 			#return 1
 	
-	return property_get_revert(property)
+	return null
 #endregion
