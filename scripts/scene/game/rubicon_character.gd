@@ -47,7 +47,7 @@ class_name RubiconCharacter extends Node
 @export_group("Singing", "singing_")
 @export_custom(PROPERTY_HINT_GROUP_ENABLE, "") var singing_should_sing:bool = true
 @export var singing_sing_to_dance_interval:int = 4
-@export var singing_hold_type:CharacterHoldType = CharacterHoldType.STEP_REPEAT:
+@export var singing_hold_type:CharacterHoldType = CharacterHoldType.REPEAT:
 	set(value):
 		if value == singing_hold_type:
 			return
@@ -321,26 +321,26 @@ func _get_property_list() -> Array[Dictionary]:
 			hint_string = "%d/%d:%s" % [TYPE_STRING_NAME, PROPERTY_HINT_ENUM, ",".join(anim_player_list)],
 		})
 		
-		properties.append({
-			name = &"Animation Setup",
-			type = TYPE_NIL,
-			usage = PROPERTY_USAGE_CATEGORY
-		})
-			
-		properties.append({
-			name = &"_add_mode",
-			type = TYPE_CALLABLE,
-			hint = PROPERTY_HINT_TOOL_BUTTON,
-			usage = PROPERTY_USAGE_EDITOR,
-			hint_string = "Add New Game Mode,Add"
-		})
-		
-		properties.append({
-			name = &"_new_mode_name",
-			type = TYPE_STRING_NAME,
-			hint = PROPERTY_HINT_TYPE_STRING,
-			usage = PROPERTY_USAGE_EDITOR
-		})
+		#properties.append({
+			#name = &"Animation Setup",
+			#type = TYPE_NIL,
+			#usage = PROPERTY_USAGE_CATEGORY
+		#})
+			#
+		#properties.append({
+			#name = &"_add_mode",
+			#type = TYPE_CALLABLE,
+			#hint = PROPERTY_HINT_TOOL_BUTTON,
+			#usage = PROPERTY_USAGE_EDITOR,
+			#hint_string = "Add New Game Mode,Add"
+		#})
+		#
+		#properties.append({
+			#name = &"_new_mode_name",
+			#type = TYPE_STRING_NAME,
+			#hint = PROPERTY_HINT_TYPE_STRING,
+			#usage = PROPERTY_USAGE_EDITOR
+		#})
 	
 		if !modes.is_empty():
 			for mode:StringName in modes:
@@ -350,28 +350,28 @@ func _get_property_list() -> Array[Dictionary]:
 					usage = PROPERTY_USAGE_CATEGORY
 				})
 				
-				properties.append({
-					name = &"_remove_mode_"+mode,
-					type = TYPE_CALLABLE,
-					hint = PROPERTY_HINT_TOOL_BUTTON,
-					usage = PROPERTY_USAGE_EDITOR,
-					hint_string = "Remove %s,Remove" % [mode.capitalize()]
-				})
+				#properties.append({
+					#name = &"_remove_mode_"+mode,
+					#type = TYPE_CALLABLE,
+					#hint = PROPERTY_HINT_TOOL_BUTTON,
+					#usage = PROPERTY_USAGE_EDITOR,
+					#hint_string = "Remove %s,Remove" % [mode.capitalize()]
+				#})
 				
-				properties.append({
-					name = &"Add Animation Groups",
-					type = TYPE_NIL,
-					usage = PROPERTY_USAGE_GROUP
-				})
-				
-				properties.append({
-					name = &"_add_animation_group",
-					type = TYPE_CALLABLE,
-					hint = PROPERTY_HINT_TOOL_BUTTON,
-					usage = PROPERTY_USAGE_EDITOR,
-					hint_string = "Add Animation Group,Add"
-				})
-				
+				#properties.append({
+					#name = &"Add Animation Groups",
+					#type = TYPE_NIL,
+					#usage = PROPERTY_USAGE_GROUP
+				#})
+				#
+				#properties.append({
+					#name = &"_add_animation_group",
+					#type = TYPE_CALLABLE,
+					#hint = PROPERTY_HINT_TOOL_BUTTON,
+					#usage = PROPERTY_USAGE_EDITOR,
+					#hint_string = "Add Animation Group,Add"
+				#})
+				#
 				var mode_groups:Dictionary[StringName, int] = get("%s_anim_groups" % [mode])
 				for i:int in mode_groups.size():
 					var group_name:StringName = mode_groups.keys()[i]
@@ -383,20 +383,20 @@ func _get_property_list() -> Array[Dictionary]:
 						hint_string = group_prefix
 					})
 					
-					properties.append({
-						name = &"Aliases",
-						type = TYPE_NIL,
-						usage = PROPERTY_USAGE_SUBGROUP,
-						hint_string = "alias_"
-					})
-					
-					for group_size:int in mode_groups[group_name]:
-						properties.append({
-							name = &"alias_%s_lane%s" % [mode, str(group_size)],
-							type = TYPE_STRING_NAME,
-							hint = PROPERTY_HINT_TYPE_STRING,
-							usage = PROPERTY_USAGE_EDITOR
-						})
+					#properties.append({
+						#name = &"Aliases",
+						#type = TYPE_NIL,
+						#usage = PROPERTY_USAGE_SUBGROUP,
+						#hint_string = "alias_"
+					#})
+					#
+					#for group_size:int in mode_groups[group_name]:
+						#properties.append({
+							#name = &"alias_%s_lane%s" % [mode, str(group_size)],
+							#type = TYPE_STRING_NAME,
+							#hint = PROPERTY_HINT_TYPE_STRING,
+							#usage = PROPERTY_USAGE_EDITOR
+						#})
 					
 					for group_size:int in mode_groups[group_name]:
 						var anim_id:StringName = &"%s_lane%s" % [mode, str(group_size)]
