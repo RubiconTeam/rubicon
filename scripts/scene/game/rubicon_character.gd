@@ -269,8 +269,8 @@ func _get_configuration_warnings() -> PackedStringArray:
 	if dancing_animations.is_empty():
 		warnings.append(tr(&"There is no current dance animation. Define it in Dancing > Animations"))
 	
-	if animations.has(null) or animations.has(&""):
-		warnings.append(tr(&"One or more animations are null. Set them up on the character's properties."))
+	#if animations.has(null) or animations.has(&""):
+		#warnings.append(tr(&"One or more animations are null. Set them up on the character's properties."))
 	
 	return warnings
 
