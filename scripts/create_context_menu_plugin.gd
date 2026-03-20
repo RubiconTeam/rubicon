@@ -28,6 +28,7 @@ func _make_character_tree(_name:String, type:StringName, sprite_frames_path:Stri
 	root.script = preload("res://addons/rubicon/scripts/scene/game/rubicon_character.gd")
 	root.name = _name
 	
+	var sprite_anim_player:AnimationPlayer
 	if !sprite_frames_path.is_empty():
 		var sprite:AnimatedSprite2D = AnimatedSprite2D.new()
 		sprite.name = &"Sprite"
@@ -35,13 +36,12 @@ func _make_character_tree(_name:String, type:StringName, sprite_frames_path:Stri
 		root.add_child(sprite)
 		sprite.owner = root
 		if !animation_library_path.is_empty():
-			print(animation_library_path)
-			var _anim_player:AnimationPlayer = AnimationPlayer.new()
-			_anim_player.name = &"SpriteAnimationPlayer"
+			sprite_anim_player = AnimationPlayer.new()
+			sprite_anim_player.name = &"SpriteAnimationPlayer"
 			
-			_anim_player.add_animation_library(animation_library_path.get_file().get_basename(), load(animation_library_path))
-			sprite.add_child(_anim_player)
-			_anim_player.owner = sprite
+			sprite_anim_player.add_animation_library(animation_library_path.get_file().get_basename(), load(animation_library_path))
+			sprite.add_child(sprite_anim_player)
+			sprite_anim_player.owner = root
 	
 	var root_anim_player:AnimationPlayer = AnimationPlayer.new()
 	root_anim_player.name = "RootAnimationPlayer"
@@ -56,6 +56,13 @@ func _make_character_tree(_name:String, type:StringName, sprite_frames_path:Stri
 	library.add_animation(&"sing_left", Animation.new())
 	library.add_animation(&"sing_right", Animation.new())
 	library.add_animation(&"sing_up", Animation.new())
+	
+	if sprite_anim_player != null:
+		for anim_name:StringName in library.get_animation_list():
+			var anim:Animation = library.get_animation(anim_name)
+			var anim_track:int = anim.add_track(Animation.TYPE_ANIMATION)
+			anim.track_set_path(anim_track, root.get_path_to(sprite_anim_player))
+			anim.track_insert_key(anim_track, 0.0, &"")
 	
 	root.dancing_animations.append([&"dance_idle"])
 	root.set(&"animations", {
