@@ -72,15 +72,12 @@ func spawn_note(index : int) -> void:
 	
 	graphic.initialize(self, index)
 	
-	if Engine.is_editor_hint():
-		graphic.owner = owner
-	
 	graphic.name = "Note %s" % index
 	graphics[index] = graphic
 	
 	add_child(graphic)
 	if Engine.is_editor_hint():
-		graphic.owner = get_tree().edited_scene_root
+		graphic.owner = owner
 	
 	sort_graphic(index)
 
