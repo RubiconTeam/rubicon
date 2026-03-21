@@ -15,6 +15,7 @@ class_name RubiconLevelNoteController extends Control
 		_override_note_database = val
 		_reset_note_database()
 
+@export var scroll_speed_multiplier : float = 1.0
 @export var autoplay : bool = false
 @export var preview_as_autoplay : bool = true
 @export var inputs : RubiconLevelNoteInputMap
