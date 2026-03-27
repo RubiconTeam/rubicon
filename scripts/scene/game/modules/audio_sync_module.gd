@@ -8,6 +8,8 @@ enum SyncTime {
 	MEASURE,
 }
 
+@export var enabled:bool = true
+
 @export var check_every:SyncTime = SyncTime.MEASURE:
 	set(value):
 		check_every = value
@@ -22,6 +24,8 @@ enum SyncTime {
 		notify_property_list_changed()
 
 @export var players_to_sync:Array[AudioStreamPlayer]
+
+var desync_threshold:float = 0.015
 
 var _level:RubiconLevel:
 	set(value):
@@ -64,14 +68,15 @@ func set_sync_time(new_sync_time:SyncTime):
 				_level.clock.measure_change.connect(check_for_desync)
 
 func check_for_desync() -> void:
-	if _level == null or reference_player == null:
+	if _level == null or reference_player == null or !enabled:
 		return
 	
 	var anim_player_time:float = _level.clock.animation_player.current_animation_position
-	if is_equal_approx(reference_player.get_playback_position(), anim_player_time):
+	print("audioplayer time:" + str(reference_player.get_playback_position()), "     animation time:" + str(anim_player_time))
+	if abs(reference_player.get_playback_position() - anim_player_time) > desync_threshold:
 		print("resynced")
 		for player in players_to_sync:
-			player.seek(anim_player_time)
+			player.play(5.0)
 
 func _notification(what: int) -> void:
 	match what:
