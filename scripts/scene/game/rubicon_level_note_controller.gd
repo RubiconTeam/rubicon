@@ -149,14 +149,14 @@ func _notification(what: int) -> void:
 				_chart_dirty = false
 		NOTIFICATION_PARENTED:
 			if _level != null:
-				_level.metadata_changed.disconnect(update_chart)
+				_level.changed.disconnect(update_chart)
 				_level = null
 			
 			var parent : Node = get_parent()
 			while parent != null:
 				if parent is RubiconLevel:
 					_level = parent
-					_level.metadata_changed.connect(update_chart)
+					_level.changed.connect(update_chart)
 					break
 				
 				parent = parent.get_parent()

@@ -10,13 +10,16 @@ class_name RubiconLevel extends Node
 		if _metadata != null:
 			RubiconTimeChange.update(_metadata.time_changes)
 		
-		metadata_changed.emit()
+		changed.emit()
 
 var clock : RubiconLevelClock
 
 var _metadata : RubiconLevelMetadata
 
-signal metadata_changed
+signal changed ## Is emitted when anything changes in the level.
+
+func emit_changed() -> void:
+	changed.emit()
 
 func _get_configuration_warnings() -> PackedStringArray:
 	var warnings : PackedStringArray
