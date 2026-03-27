@@ -20,7 +20,7 @@ static func get_time_change_at_millisecond(time_changes : Array[RubiconTimeChang
 	return get_time_change_at_measure(time_changes, get_measure_at_millisecond(time_changes, millisecond))
 
 static func get_time_change_at_measure(time_changes : Array[RubiconTimeChange], measure : float) -> RubiconTimeChange:
-	if time_changes.size() == 1:
+	if time_changes.size() == 1 or measure < 0:
 		return time_changes[0]
 	
 	for t in range(1, time_changes.size()):
@@ -38,14 +38,13 @@ static func get_time_change_at_step(time_changes : Array[RubiconTimeChange], ste
 	return get_time_change_at_measure(time_changes, get_measure_at_step(time_changes, step))
 
 static func get_millisecond_at_measure(time_changes : Array[RubiconTimeChange], measure : float) -> float:
-	if time_changes.size() == 1:
+	if time_changes.size() == 1 or measure < 0:
 		return RubiconLevelClock.measure_to_millisecond(measure, time_changes[0].bpm, time_changes[0].time_signature_numerator)
 
 	for i in range(1, time_changes.size()):
 		var current : RubiconTimeChange = time_changes[i]
 		if measure > current.measure:
 			continue
-		
 		
 		var previous : RubiconTimeChange = time_changes[i - 1]
 		return previous.millisecond_time + RubiconLevelClock.measure_to_millisecond(measure - previous.measure, previous.bpm, previous.time_signature_numerator)
@@ -61,18 +60,21 @@ static func get_millisecond_at_step(time_changes : Array[RubiconTimeChange], ste
 static func get_measure_at_millisecond(time_changes : Array[RubiconTimeChange], millisecond : float) -> float:
 	for i: int in time_changes.size():
 		var current: RubiconTimeChange = time_changes[i]
-		if millisecond < current.millisecond_time:
-			continue
-		
-		if i < time_changes.size() - 1 and millisecond >= time_changes[i + 1].millisecond_time:
-			continue
+		var is_negative : bool = millisecond < 0
+
+		if not is_negative:
+			if millisecond < current.millisecond_time:
+				continue
+			
+			if i < time_changes.size() - 1 and millisecond >= time_changes[i + 1].millisecond_time:
+				continue
 		
 		return current.measure + ((millisecond - current.millisecond_time) / RubiconLevelClock.measure_to_millisecond(1, current.bpm, current.time_signature_numerator))
 	
 	return 0
 
 static func get_measure_at_beat(time_changes : Array[RubiconTimeChange], beat : float) -> float:
-	if time_changes.size() == 1:
+	if time_changes.size() == 1 or beat < 0:
 		return RubiconLevelClock.beats_to_measures(beat, time_changes[0].time_signature_numerator)
 	
 	var beat_count : float = 0
@@ -89,7 +91,7 @@ static func get_measure_at_beat(time_changes : Array[RubiconTimeChange], beat : 
 	return 0.0
 
 static func get_measure_at_step(time_changes : Array[RubiconTimeChange], step : float) -> float:
-	if time_changes.size() == 1:
+	if time_changes.size() == 1 or step < 0:
 		return RubiconLevelClock.steps_to_measures(step, time_changes[0].time_signature_numerator, time_changes[0].time_signature_denominator)
 	
 	var step_count : float = 0
@@ -109,7 +111,7 @@ static func get_beat_at_millisecond(time_changes : Array[RubiconTimeChange], mil
 	return get_beat_at_measure(time_changes, get_measure_at_millisecond(time_changes, millisecond))
 
 static func get_beat_at_measure(time_changes : Array[RubiconTimeChange], measure : float) -> float:
-	if time_changes.size() == 1:
+	if time_changes.size() == 1 or measure < 0:
 		return RubiconLevelClock.measure_to_beats(measure, time_changes[0].time_signature_numerator)
 	
 	var beat_count : float = 0; var measure_count : float = 0
@@ -135,7 +137,7 @@ static func get_step_at_millisecond(time_changes : Array[RubiconTimeChange], mil
 	return get_step_at_measure(time_changes, get_measure_at_millisecond(time_changes, millisecond))
 
 static func get_step_at_measure(time_changes : Array[RubiconTimeChange], measure : float) -> float:
-	if time_changes.size() == 1:
+	if time_changes.size() == 1 or measure < 0:
 		return RubiconLevelClock.measure_to_steps(measure, time_changes[0].time_signature_numerator, time_changes[0].time_signature_denominator)
 	
 	var step_count : float = 0; var measure_count : float = 0

@@ -10,7 +10,7 @@ class_name RubiconLevelClock extends Node
 		if not is_on_animation:
 			return 0
 		
-		return maxf((_animation_player.current_animation_position + offset) * 1000.0, 0.0)
+		return (_animation_player.current_animation_position + offset) * 1000.0
 	set(val):
 		var is_on_animation : bool = animation_player != null and (animation_player.is_animation_active() or animation_player.is_playing())
 		if not is_on_animation:
