@@ -116,3 +116,9 @@ func reset(to_state : Hit) -> void:
 			scoring_hit = to_state
 		Hit.HIT_INCOMPLETE:
 			handler.hit_note(data_index, handler.data[data_index].get_millisecond_start_position(), Hit.HIT_INCOMPLETE)
+
+func get_note_data() -> RubiChartNote:
+	return handler.data[data_index]
+
+static func compare_results_by_time_hit(x: RubiconLevelNoteHitResult, y: RubiconLevelNoteHitResult) -> bool:
+	return x.time_when_hit < y.time_when_hit

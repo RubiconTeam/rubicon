@@ -134,27 +134,17 @@ func hit_note(index : int, time_when_hit : float, hit_type : RubiconLevelNoteHit
 
 	result.scoring_rating = rating
 
-	if is_start:
-		var note_index: int = get_controller().get_hit_count()
-		if not get_controller().combo_active:
-			get_controller().combo_start = note_index
-			get_controller().combo_active = true
-
-		get_controller().combo_end = note_index
-		if note_index < get_controller().combo_start:
-			get_controller().combo_start = note_index
-	if result.scoring_rating == RubiconLevelNoteHitResult.Judgment.JUDGMENT_MISS:
-		get_controller().combo_active = false
-
+	var controller: RubiconLevelNoteController = get_controller()
 	var has_ending_row:bool = data[index].ending_row != null
-	get_controller().note_changed.emit(result, has_ending_row)
-
-	var note_type : StringName = data[index].type
-	var define_key : StringName = "%s_%s" % [note_type, get_mode_id()] if not note_type.is_empty() else get_mode_id()
-	get_controller().get_note_database()[define_key].note_hit(result)
 
 	last_hit_note_index = index
 	results[index] = result
+
+	var note_type : StringName = data[index].type
+	var define_key : StringName = "%s_%s" % [note_type, get_mode_id()] if not note_type.is_empty() else get_mode_id()
+	controller.get_note_database()[define_key].note_hit(result)
+
+	controller.note_changed.emit(result, has_ending_row)
 
 func _notification(what: int) -> void:
 	match what:
@@ -240,9 +230,13 @@ func _process(delta: float) -> void:
 		hit_note(note_hit_index, data[note_hit_index].get_millisecond_end_position(), RubiconLevelNoteHitResult.Hit.HIT_COMPLETE)
 		note_hit_index += 1
 
+		get_controller().update_performance()
+
 	while not autoplay and note_hit_index < data.size() and data[note_hit_index].get_millisecond_start_position() - millisecond_position < -settings.judgment_window_bad and (results[note_hit_index] == null or results[note_hit_index].scoring_hit == RubiconLevelNoteHitResult.Hit.HIT_NONE):
 		hit_note(note_hit_index, data[note_hit_index].get_millisecond_start_position() + settings.judgment_window_bad + 1, RubiconLevelNoteHitResult.Hit.HIT_COMPLETE) # TODO: Add more forgiving hold notes
 		note_hit_index += 1
+
+		get_controller().update_performance()
 
 func _has_passed_last_note(millisecond_position : float) -> bool:
 	var has_last_note : bool = note_hit_index > 0
@@ -265,9 +259,11 @@ func _roll_hit_back() -> void:
 	note_hit_index -= 1
 	last_hit_note_index -= 1
 
-	get_controller().note_changed.emit(results[note_hit_index])
+	var controller: RubiconLevelNoteController = get_controller()
 	results[note_hit_index].reset(RubiconLevelNoteHitResult.Hit.HIT_NONE)
 
+	controller.update_performance()
+	controller.note_changed.emit(results[note_hit_index])
 
 func _reset_to_incomplete_note() -> void:
 	if results[note_hit_index] == null or results[note_hit_index].scoring_hit != RubiconLevelNoteHitResult.Hit.HIT_COMPLETE:

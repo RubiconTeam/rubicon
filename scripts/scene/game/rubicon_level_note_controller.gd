@@ -21,50 +21,23 @@ class_name RubiconLevelNoteController extends Control
 @export var inputs : RubiconLevelNoteInputMap
 
 @export_group("Performance", "performance_")
-@export var performance_max_score : float = 1000000
-@export var performance_score : float:
-	get:
-		var total_value : float = 0.0
-		var note_count : int = 0
-		for key in note_handlers:
-			var handler : RubiconLevelNoteHandler = note_handlers[key]
-			note_count += handler.data.size()
+@export_subgroup("Score", "performance_score_")
+@export var performance_score_max : float = 1000000
+@export var performance_score_value: float = 0
 
-			for i in handler.note_hit_index:
-				total_value += handler.results[i].scoring_value
+@export_subgroup("Combo", "performance_combo_")
+@export var performance_combo_value: int = 0
+@export var performance_combo_highest: int = 0
 
-		return (total_value / note_count) * performance_max_score
-
-@export_subgroup("Hits", "performance_hits")
-@export var performance_hits_perfect : int:
-	get:
-		return _get_result_count_of_rating(RubiconLevelNoteHitResult.Judgment.JUDGMENT_PERFECT)
-
-@export var performance_hits_great : int:
-	get:
-		return _get_result_count_of_rating(RubiconLevelNoteHitResult.Judgment.JUDGMENT_GREAT)
-
-@export var performance_hits_good : int:
-	get:
-		return _get_result_count_of_rating(RubiconLevelNoteHitResult.Judgment.JUDGMENT_GOOD)
-
-@export var performance_hits_okay : int:
-	get:
-		return _get_result_count_of_rating(RubiconLevelNoteHitResult.Judgment.JUDGMENT_OKAY)
-
-@export var performance_hits_bad : int:
-	get:
-		return _get_result_count_of_rating(RubiconLevelNoteHitResult.Judgment.JUDGMENT_BAD)
-
-@export var performance_hits_miss :  int:
-	get:
-		return _get_result_count_of_rating(RubiconLevelNoteHitResult.Judgment.JUDGMENT_MISS)
+@export_subgroup("Hits", "performance_hits_")
+@export var performance_hits_perfect : int
+@export var performance_hits_great : int
+@export var performance_hits_good : int
+@export var performance_hits_okay : int
+@export var performance_hits_bad : int
+@export var performance_hits_miss :  int
 
 var note_handlers : Dictionary[String, RubiconLevelNoteHandler]
-
-var combo_start: int
-var combo_end: int
-var combo_active: bool = false
 
 var _chart : RubiChart
 var _chart_dirty : bool = false
@@ -77,6 +50,8 @@ var _internal_note_database : Dictionary[StringName, RubiconLevelNoteMetadata]
 static var is_playtesting:bool
 
 signal note_changed(result:RubiconLevelNoteHitResult, has_ending_row:bool)
+signal performance_updated
+
 signal press
 signal release
 
@@ -114,6 +89,56 @@ func get_hit_count() -> int:
 		count += handler.note_hit_index
 
 	return count
+
+func update_performance() -> void:
+	var total_value: float = 0.0
+	var note_count: int = 0
+	var current_combo: int = 0
+	var highest_combo: int = 0
+
+	var results: Array[RubiconLevelNoteHitResult]
+	for key in note_handlers:
+		var handler : RubiconLevelNoteHandler = note_handlers[key]
+		note_count += handler.data.size()
+
+		var current_result: RubiconLevelNoteHitResult = handler.results[handler.note_hit_index]
+		var target_index: int = handler.note_hit_index
+		if current_result != null and current_result.scoring_hit == RubiconLevelNoteHitResult.Hit.HIT_INCOMPLETE:
+			target_index += 1
+
+		for i in target_index:
+			results.append(handler.results[i])
+	
+	results.sort_custom(RubiconLevelNoteHitResult.compare_results_by_time_hit)
+	for result in results:
+		total_value += result.scoring_value
+
+		match result.scoring_rating:
+			RubiconLevelNoteHitResult.Judgment.JUDGMENT_OKAY, RubiconLevelNoteHitResult.Judgment.JUDGMENT_BAD, RubiconLevelNoteHitResult.Judgment.JUDGMENT_MISS:
+				current_combo = 0
+			_:
+				current_combo += 1
+				if current_combo > highest_combo:
+					highest_combo = current_combo
+	
+	performance_combo_value = current_combo
+	performance_combo_highest = highest_combo
+	
+	if performance_combo_highest == note_count and floori(total_value) == note_count:
+		performance_score_value = performance_score_max
+	else:
+		var base_score: float = (total_value / note_count) * performance_score_max * 0.5
+		var bonus_score: float = sqrt((float(performance_combo_highest) / note_count) * 100.0) * performance_score_max * 0.05
+		performance_score_value = base_score + bonus_score
+	
+	performance_hits_perfect = _get_result_count_of_rating(RubiconLevelNoteHitResult.Judgment.JUDGMENT_PERFECT)
+	performance_hits_great = _get_result_count_of_rating(RubiconLevelNoteHitResult.Judgment.JUDGMENT_GREAT)
+	performance_hits_good = _get_result_count_of_rating(RubiconLevelNoteHitResult.Judgment.JUDGMENT_GOOD)
+	performance_hits_okay = _get_result_count_of_rating(RubiconLevelNoteHitResult.Judgment.JUDGMENT_OKAY)
+	performance_hits_bad = _get_result_count_of_rating(RubiconLevelNoteHitResult.Judgment.JUDGMENT_BAD)
+	performance_hits_miss = _get_result_count_of_rating(RubiconLevelNoteHitResult.Judgment.JUDGMENT_MISS)
+
+	performance_updated.emit()
 
 func _get_result_count_of_rating(rating : RubiconLevelNoteHitResult.Judgment) -> int:
 	var count : int = 0
@@ -172,6 +197,15 @@ func _notification(what: int) -> void:
 					break
 
 				parent = parent.get_parent()
+
+func _validate_property(property: Dictionary) -> void:
+	var property_name: String = property.name
+	if property_name.begins_with("performance_"):
+		match property_name:
+			"performance_score_max":
+				property.usage = PROPERTY_USAGE_DEFAULT
+			_:
+				property.usage = PROPERTY_USAGE_EDITOR
 
 func should_autoplay() -> bool:
 	return autoplay or (preview_as_autoplay and Engine.is_editor_hint() and !is_playtesting)
