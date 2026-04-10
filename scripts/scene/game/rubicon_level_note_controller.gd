@@ -32,7 +32,7 @@ class_name RubiconLevelNoteController extends Control
 
 			for i in handler.note_hit_index:
 				total_value += handler.results[i].scoring_value
-		
+
 		return (total_value / note_count) * performance_max_score
 
 @export_subgroup("Hits", "performance_hits")
@@ -62,6 +62,10 @@ class_name RubiconLevelNoteController extends Control
 
 var note_handlers : Dictionary[String, RubiconLevelNoteHandler]
 
+var combo_start: int
+var combo_end: int
+var combo_active: bool = false
+
 var _chart : RubiChart
 var _chart_dirty : bool = false
 
@@ -86,7 +90,7 @@ func update_chart() -> void:
 	var metadata : RubiconLevelMetadata = get_level_metadata()
 	if metadata == null or metadata.time_changes.is_empty():
 		return
-	
+
 	_chart.initialize(metadata.time_changes)
 	for id in note_handlers:
 		note_handlers[id].update_notes()
@@ -94,14 +98,22 @@ func update_chart() -> void:
 func get_level_clock() -> RubiconLevelClock:
 	if _level != null:
 		return _level.clock
-	
+
 	return null
 
 func get_level_metadata() -> RubiconLevelMetadata:
 	if _level != null:
 		return _level.metadata
-	
+
 	return null
+
+func get_hit_count() -> int:
+	var count : int = 0
+	for key in note_handlers:
+		var handler : RubiconLevelNoteHandler = note_handlers[key]
+		count += handler.note_hit_index
+
+	return count
 
 func _get_result_count_of_rating(rating : RubiconLevelNoteHitResult.Judgment) -> int:
 	var count : int = 0
@@ -111,9 +123,9 @@ func _get_result_count_of_rating(rating : RubiconLevelNoteHitResult.Judgment) ->
 			var result : RubiconLevelNoteHitResult = handler.results[i]
 			if result.scoring_rating != rating:
 				continue
-				
+
 			count += 1
-		
+
 	return count
 
 func _reset_note_database() -> void:
@@ -121,22 +133,22 @@ func _reset_note_database() -> void:
 	if _override_note_database != null:
 		for key in _override_note_database.defines:
 			_internal_note_database[key] = _override_note_database.defines[key]
-	
+
 	var default_database_path : String = ProjectSettings.get_setting("rubicon/defaults/note_database")
 	if default_database_path.is_empty() or not ResourceLoader.exists(default_database_path):
 		return
-	
+
 	var resource : Resource = ResourceLoader.load(default_database_path)
 	if resource is not RubiconLevelNoteDatabase:
 		update_chart()
 		return
-	
+
 	for key in resource.defines:
 		if _internal_note_database.has(key):
 			continue
-		
+
 		_internal_note_database[key] = resource.defines[key]
-	
+
 	update_chart()
 
 func _notification(what: int) -> void:
@@ -145,20 +157,20 @@ func _notification(what: int) -> void:
 			if _chart_dirty:
 				if _chart != null:
 					update_chart()
-				
+
 				_chart_dirty = false
 		NOTIFICATION_PARENTED:
 			if _level != null:
 				_level.changed.disconnect(update_chart)
 				_level = null
-			
+
 			var parent : Node = get_parent()
 			while parent != null:
 				if parent is RubiconLevel:
 					_level = parent
 					_level.changed.connect(update_chart)
 					break
-				
+
 				parent = parent.get_parent()
 
 func should_autoplay() -> bool:
@@ -167,11 +179,11 @@ func should_autoplay() -> bool:
 func _input(event: InputEvent) -> void:
 	if should_autoplay() or event.is_echo() or inputs == null or not inputs.has_event_registered(event):
 		return
-	
+
 	var id : StringName = inputs.get_handler_id_for_event(event)
 	if not note_handlers.has(id):
 		return
-	
+
 	var handler : RubiconLevelNoteHandler = note_handlers[id]
 	if not handler._should_process():
 		return
