@@ -100,7 +100,14 @@ func update_performance() -> void:
 	for key in note_handlers:
 		var handler : RubiconLevelNoteHandler = note_handlers[key]
 		note_count += handler.data.size()
-
+		
+		
+		# bandaid solution, will stop score from working towards the end of the song
+		# but will prevent a crash too
+		if handler.note_hit_index >= handler.results.size():
+			return
+		
+		
 		var current_result: RubiconLevelNoteHitResult = handler.results[handler.note_hit_index]
 		var target_index: int = handler.note_hit_index
 		if current_result != null and current_result.scoring_hit == RubiconLevelNoteHitResult.Hit.HIT_INCOMPLETE:
