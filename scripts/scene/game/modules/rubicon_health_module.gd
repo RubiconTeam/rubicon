@@ -4,6 +4,9 @@ class_name RubiconHealthModule
 
 @export var note_controller : RubiconLevelNoteController:
 	set(value):
+		if value == note_controller:
+			return
+		
 		if is_tree_root and note_controller == null:
 			printerr("Not recommended to assign a Note Controller on a character's scene (unless you know what you're doing!)")
 		
