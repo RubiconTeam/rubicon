@@ -1,6 +1,6 @@
 @tool
 extends Node
-class_name RubiconLevelSongModule
+class_name RubiconLevelSong
 
 enum SyncTime {
 	STEP,
