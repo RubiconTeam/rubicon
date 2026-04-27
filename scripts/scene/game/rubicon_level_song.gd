@@ -27,9 +27,9 @@ enum SyncTime {
 		set_level()
 
 @export var sync_reference_player: AudioStreamPlayer
+@export var sync_desync_threshold: float = 0.045
 
 var playing:bool = false
-var desync_threshold: float = 0.015
 
 var _level:RubiconLevel:
 	set(value):
@@ -85,7 +85,11 @@ func set_level():
 func start_playing() -> void:
 	playing = true
 	for player:AudioStreamPlayer in audio_players:
-		player.play(_level.clock.animation_player.current_animation_position + offset)
+		var start_time:float = _level.clock.animation_player.current_animation_position + offset
+		if start_time < 0:
+			#no idea if this actually works but worth a try
+			await start_time >= 0
+		player.play(start_time)
 
 func stop_playing() -> void:
 	playing = false
@@ -110,8 +114,8 @@ func check_for_desync() -> void:
 	
 	var anim_player_time:float = _level.clock.animation_player.current_animation_position + offset
 	print("audioplayer time:" + str(sync_reference_player.get_playback_position()), "     animation time:" + str(anim_player_time))
-	if abs(sync_reference_player.get_playback_position() - anim_player_time) > desync_threshold:
-		print("resynced")
+	if abs(sync_reference_player.get_playback_position() - anim_player_time) > sync_desync_threshold:
+		print("Resynced audio.")
 		for player:AudioStreamPlayer in audio_players:
 			if player.playing:
 				player.seek(anim_player_time)
@@ -121,7 +125,6 @@ func _notification(what: int) -> void:
 		NOTIFICATION_INTERNAL_PROCESS:
 			if _level != null and (!_level.clock.animation_player.is_playing() and playing):
 				stop_playing()
-				print("poops?")
 		
 		NOTIFICATION_PARENTED:
 			if _level != null:
