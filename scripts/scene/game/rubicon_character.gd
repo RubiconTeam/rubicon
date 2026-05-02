@@ -170,8 +170,11 @@ func step_change() -> void:
 		return
 	
 	if singing_should_sing and state == CharacterState.STATE_HOLDING and singing_hold_type == CharacterHoldType.STEP_REPEAT:
-		# TODO: execute accordingly to step_time_value
-		play(_last_sing_anim, true)
+		var cur_step:int = floori(level_note_controller.get_level_clock().time_step)
+		var steps_since_initial:int = cur_step - _last_sing_step
+		var modulo:float = fmod(steps_since_initial, singing_step_time_value)
+		if steps_since_initial >= singing_step_time_value and modulo == 0:
+			play(_last_sing_anim, true)
 	
 	if dancing_should_dance:
 		var cur_step:int = floori(level_note_controller.get_level_clock().time_step)
