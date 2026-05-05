@@ -21,12 +21,6 @@ class_name RubiconCharacter extends Node
 		notify_property_list_changed()
 		update_configuration_warnings()
 
-## If the same animation is played, retain the queue that it had previously. (Example: utilizing [AnimationPlayer]'s auto transitions)
-@export var animation_retain_queue : bool = false
-
-## Used for some sprites that may look "glitchy" when an animation is queued and not updated the same frame. (Main Example: gdanimate sprites which seem to have an issue with this specifically).
-@export var animation_queued_update_immediate : bool = false
-
 @export var level_note_controller : RubiconLevelNoteController:
 	set(value):
 		if value == level_note_controller:
@@ -82,6 +76,13 @@ class_name RubiconCharacter extends Node
 		dancing_animations = value
 		_dance_anim_size = dancing_animations.size()
 		_dance_anim_index = 0
+
+@export_group("Transitions", "transition_")
+## If the same animation is played, retain the queue that it had previously. (Example: utilizing [AnimationPlayer]'s auto transitions)
+@export var transition_retain_animation_queue : bool = false
+
+## Used for some sprites that may look "glitchy" when an animation is queued and not updated the same frame. (Main Example: gdanimate sprites which seem to have an issue with this specifically).
+@export var transition_update_queued_animations : bool = false
 
 var state:CharacterState = CharacterState.STATE_DANCING
 
@@ -222,13 +223,13 @@ func play(anim_name:StringName, warn_missing_animation:bool = false) -> void:
 		return
 
 	var same_animation_queue : Array[StringName]
-	if animation_retain_queue and animation_player.current_animation == anim_name:
+	if transition_retain_animation_queue and animation_player.current_animation == anim_name:
 		same_animation_queue = animation_player.get_queue()
 
 	animation_player.play(anim_name)
 	animation_player.seek(0.0, true)
 
-	if animation_retain_queue and not same_animation_queue.is_empty():
+	if transition_retain_animation_queue and not same_animation_queue.is_empty():
 		for queued_animation in same_animation_queue:
 			animation_player.queue(queued_animation)
 
@@ -249,7 +250,7 @@ func get_anim_alias_from_result(result:RubiconLevelNoteHitResult) -> StringName:
 	return current_anim
 
 func update_animation_player(_old: StringName, _new: StringName) -> void:
-	if not animation_queued_update_immediate:
+	if not transition_update_queued_animations:
 		return
 
 	if animation_player:
