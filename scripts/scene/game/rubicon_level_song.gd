@@ -87,8 +87,9 @@ func start_playing() -> void:
 	for player:AudioStreamPlayer in audio_players:
 		var start_time:float = _level.clock.animation_player.current_animation_position + offset
 		if start_time < 0:
-			#no idea if this actually works but worth a try
-			await start_time >= 0
+			var timer:SceneTreeTimer = get_tree().create_timer(abs(start_time))
+			timer.timeout.connect(start_playing)
+			return
 		player.play(start_time)
 
 func stop_playing() -> void:
