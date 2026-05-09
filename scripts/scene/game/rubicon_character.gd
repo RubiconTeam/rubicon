@@ -246,7 +246,7 @@ func get_anim_alias_from_result(result:RubiconLevelNoteHitResult) -> StringName:
 	var current_anim : StringName = animations[mode_aliases[current_id]]
 	#temporary
 	if result.scoring_rating == RubiconLevelNoteHitResult.Judgment.JUDGMENT_MISS:
-		current_anim = PLACEHOLDER_DANCE_ANIM
+		current_anim = animations[mode_aliases[current_id + &"_miss"]]
 	return current_anim
 
 func update_animation_player(_old: StringName, _new: StringName) -> void:
@@ -285,7 +285,7 @@ var _add_animation_group:Callable = add_animation_group
 
 # Defaults for mania, as it is the targeted mode.
 @export_storage var mania_anim_aliases:Dictionary[StringName, StringName] = {"mania_lane0": "sing_left", "mania_lane1": "sing_down", "mania_lane2": "sing_up", "mania_lane3": "sing_right", "mania_lane0_miss": "miss_left", "mania_lane1_miss": "miss_down", "mania_lane2_miss": "miss_up", "mania_lane3_miss": "miss_right"}
-@export_storage var mania_anim_groups:Dictionary[StringName, int] = {"sing": 4}#, "miss": 4}
+@export_storage var mania_anim_groups:Dictionary[StringName, int] = {"sing": 4, "miss": 4}
 # default 4k directions for anim predictions (for >4k you'll have to set them up yourself, i unfortunately cant predict your brain)
 var mania_directions:Array[StringName] = [&"left", &"down", &"up", &"right"]
 
@@ -404,7 +404,10 @@ func _get_property_list() -> Array[Dictionary]:
 					#hint_string = "Add Animation Group,Add"
 				#})
 				#
-				var mode_groups:Dictionary[StringName, int] = get("%s_anim_groups" % [mode])
+				#var mode_groups:Dictionary[StringName, int] = get("%s_anim_groups" % [mode])
+				
+				# fuck it, hardcoded for now!!!
+				var mode_groups:Dictionary[StringName, int] = {&"sing": 4, &"miss": 4}
 				for i:int in mode_groups.size():
 					var group_name:StringName = mode_groups.keys()[i]
 					var group_prefix:StringName = "%s_" % [group_name.to_lower()]
@@ -432,6 +435,9 @@ func _get_property_list() -> Array[Dictionary]:
 
 					for group_size:int in mode_groups[group_name]:
 						var anim_id:StringName = &"%s_lane%s" % [mode, str(group_size)]
+						if group_name.contains("miss"):
+							anim_id += &"_miss"
+						
 						properties.append({
 							name = mania_anim_aliases[anim_id] if mania_anim_aliases.has(anim_id) else anim_id,
 							hint = PROPERTY_HINT_ENUM,
