@@ -68,13 +68,13 @@ class_name RubiconCharacter extends Node
 @export_custom(PROPERTY_HINT_GROUP_ENABLE, "") var dancing_should_dance:bool = true
 @export var dancing_step_interval:int = 8
 @export var dancing_force_dance:bool = true
-@export_storage var dancing_animations:Array[StringName] = []:
+@export_storage var dancing_animations_internal:Array[StringName] = []:
 	set(value):
-		if value == dancing_animations:
+		if value == dancing_animations_internal:
 			return
 
-		dancing_animations = value
-		_dance_anim_size = dancing_animations.size()
+		dancing_animations_internal = value
+		_dance_anim_size = dancing_animations_internal.size()
 		_dance_anim_index = 0
 
 @export_group("Transitions", "transition_")
@@ -169,7 +169,7 @@ func _process(delta: float) -> void:
 				play(_last_sing_anim, true)
 
 	if dancing_should_dance and state == CharacterState.STATE_DANCING:
-		if animation_player.is_playing() and dancing_animations.has(animation_player.current_animation) and !dancing_force_dance:
+		if animation_player.is_playing() and dancing_animations_internal.has(animation_player.current_animation) and !dancing_force_dance:
 			return
 
 		_last_dance_step = floori(level_note_controller.get_level_clock().time_step)
@@ -203,10 +203,10 @@ func _handler_released() -> void:
 	#_released_note = true
 
 func _dance() -> void:
-	if dancing_animations.is_empty():
+	if dancing_animations_internal.is_empty():
 		return
 
-	var anim:StringName = dancing_animations[_dance_anim_index]
+	var anim:StringName = dancing_animations_internal[_dance_anim_index]
 	if !anim.is_empty() and anim != &"None":
 		play(anim, true)
 
@@ -298,7 +298,7 @@ func _get_configuration_warnings() -> PackedStringArray:
 	if !is_tree_root and level_note_controller == null:
 		warnings.append(tr(&"Characters require a note controller to work. Make sure to assign one under the character's properties"))
 
-	if dancing_should_dance and dancing_animations.is_empty():
+	if dancing_should_dance and dancing_animations_internal.is_empty():
 		warnings.append(tr(&"There is no current dance animation. Define it in Dancing > Animations"))
 
 	#if animations.has(null) or animations.has(&""):
@@ -348,7 +348,7 @@ func _get_property_list() -> Array[Dictionary]:
 		properties.append({
 			name = &"dancing_animations",
 			type = TYPE_ARRAY,
-			usage = PROPERTY_USAGE_DEFAULT,
+			usage = PROPERTY_USAGE_EDITOR,
 			hint = PROPERTY_HINT_TYPE_STRING,
 			hint_string = "%d/%d:%s" % [TYPE_STRING_NAME, PROPERTY_HINT_ENUM, ",".join(anim_player_list)],
 		})
@@ -479,8 +479,9 @@ func _get(property: StringName) -> Variant:
 		var callable = Callable(self, "remove_mode").bind(split_name[2])
 		return callable
 
-	if property == &"dancing_animations":
-		return dancing_animations
+	match property:
+		&"dancing_animations":
+			return dancing_animations_internal
 
 	return null
 
@@ -499,9 +500,10 @@ func _set(property: StringName, value: Variant) -> bool:
 		animations[property] = value
 		return true
 
-	#if property == &"dancing_animations":
-		#dancing_animations = value
-		#return true
+	match property:
+		&"dancing_animations":
+			dancing_animations_internal = value
+			return true
 
 	return false
 
