@@ -227,7 +227,8 @@ func play(anim_name:StringName, warn_missing_animation:bool = false) -> void:
 	var same_animation_queue : Array[StringName]
 	if transition_retain_animation_queue and animation_player.current_animation == anim_name:
 		same_animation_queue = animation_player.get_queue()
-
+	
+	animation_player.stop()
 	animation_player.play(anim_name)
 	animation_player.seek(0.0, true)
 
