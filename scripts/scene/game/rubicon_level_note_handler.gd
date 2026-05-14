@@ -76,8 +76,10 @@ func spawn_note(index : int) -> void:
 	graphics[index] = graphic
 
 	add_child(graphic)
-	if Engine.is_editor_hint():
-		graphic.owner = owner
+
+	## Temporary removal of seeing notes in editor scene tree
+	#if Engine.is_editor_hint():
+	#	graphic.owner = owner
 
 	sort_graphic(index)
 
@@ -90,7 +92,8 @@ func despawn_note(index : int) -> void:
 	var define_key : StringName = "%s_%s" % [note_type, get_mode_id()] if not note_type.is_empty() else get_mode_id()
 	_note_pool[define_key].append(graphic)
 
-	graphics[index].owner = null
+	## Temporary removal of seeing notes in editor scene tree
+	# graphics[index].owner = null
 	graphics[index] = null
 
 func hit_note(index : int, time_when_hit : float, hit_type : RubiconLevelNoteHitResult.Hit) -> void:
@@ -164,14 +167,16 @@ func _notification(what: int) -> void:
 			if not Engine.is_editor_hint():
 				return
 
-			for i in range(note_spawn_start, note_spawn_end):
-				graphics[i].owner = null
+			## Temporary removal of seeing notes in editor scene tree
+			#for i in range(note_spawn_start, note_spawn_end):
+			#	graphics[i].owner = null
 		NOTIFICATION_EDITOR_POST_SAVE:
 			if not Engine.is_editor_hint():
 				return
 
-			for i in range(note_spawn_start, note_spawn_end):
-				graphics[i].owner = owner
+			## Temporary removal of seeing notes in editor scene tree
+			#for i in range(note_spawn_start, note_spawn_end):
+			#	graphics[i].owner = owner
 
 func _should_process() -> bool:
 	return not data.is_empty() and settings != null and _controller != null and _controller.get_level_clock() != null
