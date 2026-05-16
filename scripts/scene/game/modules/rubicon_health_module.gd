@@ -40,12 +40,11 @@ var health:float:
 		health_changed.emit()
 		
 		if value <= min_health:
-			if Engine.is_editor_hint():
-				health = max_health
-				return
-			
 			health = min_health
 			health_depleted.emit()
+			return
+		elif value >= max_health:
+			health = max_health
 			return
 		
 		health = value
