@@ -35,13 +35,13 @@ func initaliize(time_changes : Array[RubiconTimeChange]) -> void:
 		end.ending_row = self
 
 func get_note_with_id(id : String, include_ends : bool = false) -> RubiChartNote:
-	var valid_starts : Array[RubiChartNote] = starts.filter(func(x : RubiChartNote) -> bool: return x.id == id)
+	var valid_starts : Array[RubiChartNote] = starts.filter(func(x : RubiChartNote) -> bool: return x.id.ends_with(id))
 	var note : RubiChartNote = null
 	if not valid_starts.is_empty():
 		note = valid_starts.front()
 	
 	if note == null and include_ends:
-		var valid_ends : Array[RubiChartNote] = ends.filter(func(x : RubiChartNote) -> bool : return x.id == id)
+		var valid_ends : Array[RubiChartNote] = ends.filter(func(x : RubiChartNote) -> bool : return x.id.ends_with(id))
 		
 		if not valid_ends.is_empty():
 			note = valid_ends.front()
@@ -49,4 +49,4 @@ func get_note_with_id(id : String, include_ends : bool = false) -> RubiChartNote
 	return note
 
 func has_note_with_id(id : String, include_ends : bool = false) -> bool:
-	return not starts.filter(func(x : RubiChartNote) -> bool : return x.id == id).is_empty() or (include_ends and not ends.filter(func(x : RubiChartNote) -> bool : return x.id == id).is_empty())
+	return not starts.filter(func(x : RubiChartNote) -> bool : return x.id.ends_with(id)).is_empty() or (include_ends and not ends.filter(func(x : RubiChartNote) -> bool : return x.id.ends_with(id)).is_empty())
