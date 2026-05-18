@@ -31,23 +31,22 @@ var is_tree_root:bool:
 
 @export var min_health:float = 0.0
 @export var max_health:float = 100.0
-@export_storage var starting_health:float:
-	set(value):
-		starting_health = value
+@export_storage var starting_health:float
 
 var health:float:
 	set(value):
-		health_changed.emit()
-		
 		if value <= min_health:
 			health = min_health
+			health_changed.emit()
 			health_depleted.emit()
 			return
 		elif value >= max_health:
 			health = max_health
+			health_changed.emit()
 			return
 		
 		health = value
+		health_changed.emit()
 
 @export_storage var health_addition:Dictionary[StringName, float] = {}
 
