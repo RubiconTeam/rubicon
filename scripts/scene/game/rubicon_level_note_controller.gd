@@ -21,6 +21,8 @@ class_name RubiconLevelNoteController extends Control
 @export var inputs : RubiconLevelNoteInputMap
 
 @export_group("Performance", "performance_")
+@export var performance_accuracy_percent: float = 100
+
 @export_subgroup("Score", "performance_score_")
 @export var performance_score_max : float = 1000000
 @export var performance_score_value: float = 0
@@ -100,11 +102,11 @@ func update_performance() -> void:
 	for key in note_handlers:
 		var handler : RubiconLevelNoteHandler = note_handlers[key]
 		note_count += handler.data.size()
-		
+
 		if handler.note_hit_index >= handler.results.size():
 			results.append_array(handler.results)
 			continue
-		
+
 		var current_result: RubiconLevelNoteHitResult = handler.results[handler.note_hit_index]
 		var target_index: int = handler.note_hit_index
 		if current_result != null and current_result.scoring_hit == RubiconLevelNoteHitResult.Hit.HIT_INCOMPLETE:
@@ -112,7 +114,7 @@ func update_performance() -> void:
 
 		for i in target_index:
 			results.append(handler.results[i])
-	
+
 	results.sort_custom(RubiconLevelNoteHitResult.compare_results_by_time_hit)
 	for result in results:
 		total_value += result.scoring_value
@@ -124,23 +126,37 @@ func update_performance() -> void:
 				current_combo += 1
 				if current_combo > highest_combo:
 					highest_combo = current_combo
-	
+
 	performance_combo_value = current_combo
 	performance_combo_highest = highest_combo
-	
+
 	if performance_combo_highest == note_count and floori(total_value) == note_count:
 		performance_score_value = performance_score_max
 	else:
 		var base_score: float = (total_value / note_count) * performance_score_max * 0.5
 		var bonus_score: float = sqrt((float(performance_combo_highest) / note_count) * 100.0) * performance_score_max * 0.05
 		performance_score_value = base_score + bonus_score
-	
+
 	performance_hits_perfect = _get_result_count_of_rating(RubiconLevelNoteHitResult.Judgment.JUDGMENT_PERFECT)
 	performance_hits_great = _get_result_count_of_rating(RubiconLevelNoteHitResult.Judgment.JUDGMENT_GREAT)
 	performance_hits_good = _get_result_count_of_rating(RubiconLevelNoteHitResult.Judgment.JUDGMENT_GOOD)
 	performance_hits_okay = _get_result_count_of_rating(RubiconLevelNoteHitResult.Judgment.JUDGMENT_OKAY)
 	performance_hits_bad = _get_result_count_of_rating(RubiconLevelNoteHitResult.Judgment.JUDGMENT_BAD)
 	performance_hits_miss = _get_result_count_of_rating(RubiconLevelNoteHitResult.Judgment.JUDGMENT_MISS)
+
+	var total_hits: float = 0.0
+	var accuracy_hits: float = 0.0
+	for key: String in note_handlers:
+		var handler : RubiconLevelNoteHandler = note_handlers[key]
+		for i: int in handler.note_hit_index:
+			var result: RubiconLevelNoteHitResult = handler.results[i]
+			accuracy_hits += result.get_accuracy_value()
+			total_hits += 1
+
+	if total_hits == 0.0:
+		performance_accuracy_percent = 100.0
+	else:
+		performance_accuracy_percent = (accuracy_hits / total_hits) * 100.0
 
 	performance_updated.emit()
 
