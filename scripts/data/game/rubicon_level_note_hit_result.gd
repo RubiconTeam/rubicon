@@ -120,5 +120,20 @@ func reset(to_state : Hit) -> void:
 func get_note_data() -> RubiChartNote:
 	return handler.data[data_index]
 
+func get_accuracy_value() -> float:
+	match scoring_rating:
+		Judgment.JUDGMENT_PERFECT:
+			return 1.0
+		Judgment.JUDGMENT_GREAT:
+			return 0.99
+		Judgment.JUDGMENT_GOOD:
+			return 0.9
+		Judgment.JUDGMENT_OKAY:
+			return 0.75
+		Judgment.JUDGMENT_BAD:
+			return 0.5
+		_, Judgment.JUDGMENT_NONE, Judgment.JUDGMENT_MISS:
+			return 0.0
+
 static func compare_results_by_time_hit(x: RubiconLevelNoteHitResult, y: RubiconLevelNoteHitResult) -> bool:
 	return x.time_when_hit < y.time_when_hit
