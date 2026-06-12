@@ -125,13 +125,13 @@ func get_accuracy_value() -> float:
 		Judgment.JUDGMENT_PERFECT:
 			return 1.0
 		Judgment.JUDGMENT_GREAT:
-			return 0.99
+			return 0.95
 		Judgment.JUDGMENT_GOOD:
-			return 0.9
+			return 0.65
 		Judgment.JUDGMENT_OKAY:
-			return 0.75
+			return 0.3
 		Judgment.JUDGMENT_BAD:
-			return 0.5
+			return 0.15
 		_, Judgment.JUDGMENT_NONE, Judgment.JUDGMENT_MISS:
 			return 0.0
 
