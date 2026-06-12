@@ -209,7 +209,7 @@ func _process(delta: float) -> void:
 		note_spawn_end += 1
 
 	# Handle rewinding
-	var autoplay:bool = get_controller().should_autoplay()
+	var autoplay:bool = get_controller().should_autoplay() and not get_controller().disable_inputs
 	if autoplay:
 		while _has_passed_last_note(millisecond_position):
 			_roll_hit_back()

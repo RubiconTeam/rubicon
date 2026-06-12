@@ -20,6 +20,9 @@ class_name RubiconLevelNoteController extends Control
 @export var preview_as_autoplay : bool = true
 @export var inputs : RubiconLevelNoteInputMap
 
+# TODO: These could probably be named better.
+@export var disable_inputs: bool = false
+
 @export_group("Performance", "performance_")
 @export var performance_accuracy_percent: float = 100
 
@@ -231,6 +234,9 @@ func should_autoplay() -> bool:
 	return autoplay or (preview_as_autoplay and Engine.is_editor_hint() and !is_playtesting)
 
 func _input(event: InputEvent) -> void:
+	if disable_inputs:
+		return
+
 	if should_autoplay() or event.is_echo() or inputs == null or not inputs.has_event_registered(event):
 		return
 
