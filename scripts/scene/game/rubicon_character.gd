@@ -1,7 +1,6 @@
 @tool
 class_name RubiconCharacter extends Node
 
-@export var do_some_debug_bullshit: bool = false
 @export var animation_player:AnimationPlayer:
 	set(value):
 		if value == animation_player:
@@ -213,8 +212,6 @@ func song_started(anim_name:StringName) -> void:
 		state = CharacterState.STATE_DANCING
 
 func _handler_pressed(id: StringName) -> void:
-	if do_some_debug_bullshit:
-		print("WE GOT A HANDLER PRESSED %s" % id)
 	_handlers_pressed[id] = true
 
 func _handler_released(id: StringName) -> void:
