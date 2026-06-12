@@ -1,6 +1,7 @@
 @tool
 class_name RubiconCharacter extends Node
 
+@export var do_some_debug_bullshit: bool = false
 @export var animation_player:AnimationPlayer:
 	set(value):
 		if value == animation_player:
@@ -32,8 +33,13 @@ class_name RubiconCharacter extends Node
 		if level_note_controller != null:
 			if level_note_controller.note_changed.is_connected(note_changed):
 				level_note_controller.note_changed.disconnect(note_changed)
-			if level_note_controller.release.is_connected(_handler_released):
-				level_note_controller.release.disconnect(_handler_released)
+			
+			if level_note_controller.handler_just_pressed.is_connected(_handler_pressed):
+				level_note_controller.handler_just_pressed.disconnect(_handler_pressed)
+
+			if level_note_controller.handler_just_released.is_connected(_handler_released):
+				level_note_controller.handler_just_released.disconnect(_handler_released)
+
 			var clock:RubiconLevelClock = level_note_controller.get_level_clock()
 			if clock.step_change.is_connected(step_change):
 				clock.step_change.disconnect(step_change)
@@ -46,7 +52,11 @@ class_name RubiconCharacter extends Node
 
 		if level_note_controller != null:
 			level_note_controller.note_changed.connect(note_changed)
-			level_note_controller.release.connect(_handler_released)
+
+			_handlers_pressed.clear()
+			level_note_controller.handler_just_pressed.connect(_handler_pressed)
+			level_note_controller.handler_just_released.connect(_handler_released)
+
 			var clock:RubiconLevelClock = level_note_controller.get_level_clock()
 			clock.step_change.connect(step_change)
 			clock.animation_player.animation_started.connect(song_started)
@@ -94,6 +104,8 @@ var _last_sing_step:float
 var _last_dance_step:int
 var _dance_anim_index:int
 var _dance_anim_size:int
+
+var _handlers_pressed: Dictionary[StringName, bool]
 
 enum CharacterHoldType {
 	## Characters will play hold notes once, as if it wasn't a hold note.
@@ -189,7 +201,7 @@ func step_change() -> void:
 		if steps_since_initial >= singing_step_time_value and modulo == 0:
 			play(_last_sing_anim, true)
 
-	if dancing_should_dance:
+	if dancing_should_dance and not _handlers_pressed.values().has(true):
 		var cur_step:int = floori(level_note_controller.get_level_clock().time_step)
 		if state == CharacterState.STATE_RESTING:
 			if cur_step % dancing_step_interval == 0:
@@ -200,9 +212,13 @@ func song_started(anim_name:StringName) -> void:
 	if state != CharacterState.STATE_OVERRIDE:
 		state = CharacterState.STATE_DANCING
 
-func _handler_released() -> void:
-	pass
-	#_released_note = true
+func _handler_pressed(id: StringName) -> void:
+	if do_some_debug_bullshit:
+		print("WE GOT A HANDLER PRESSED %s" % id)
+	_handlers_pressed[id] = true
+
+func _handler_released(id: StringName) -> void:
+	_handlers_pressed[id] = false
 
 func _dance() -> void:
 	if dancing_animations.is_empty():

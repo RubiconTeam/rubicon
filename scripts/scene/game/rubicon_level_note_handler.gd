@@ -16,6 +16,8 @@ var note_spawn_end : int = 0
 var note_hit_index : int = 0
 var last_hit_note_index : int = 0
 
+var pressed: bool = false
+
 var _controller : RubiconLevelNoteController
 var _note_pool : Dictionary[StringName, Array]
 
@@ -30,6 +32,9 @@ func get_controller() -> RubiconLevelNoteController:
 @abstract func _press(event : InputEvent) -> void
 @abstract func _release(event : InputEvent) -> void
 @abstract func _autoplay_process(millisecond_position : float) -> void
+
+signal just_pressed
+signal just_released
 
 func update_notes() -> void:
 	if _controller == null:
@@ -146,6 +151,15 @@ func hit_note(index : int, time_when_hit : float, hit_type : RubiconLevelNoteHit
 	var note_type : StringName = data[index].type
 	var define_key : StringName = "%s_%s" % [note_type, get_mode_id()] if not note_type.is_empty() else get_mode_id()
 	controller.get_note_database()[define_key].note_hit(result)
+
+	if controller.should_autoplay():
+		pressed = is_start
+		if pressed:
+			just_pressed.emit()
+			get_controller().handler_just_pressed.emit(get_unique_id())
+		else:
+			just_released.emit()
+			get_controller().handler_just_released.emit(get_unique_id())
 
 	controller.note_changed.emit(result, has_ending_row)
 

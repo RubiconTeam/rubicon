@@ -54,8 +54,8 @@ static var is_playtesting:bool
 signal note_changed(result:RubiconLevelNoteHitResult, has_ending_row:bool)
 signal performance_updated
 
-signal press
-signal release
+signal handler_just_pressed(handler_name: StringName)
+signal handler_just_released(handler_name: StringName)
 
 func _init() -> void:
 	set_process_internal(true)
@@ -244,7 +244,5 @@ func _input(event: InputEvent) -> void:
 
 	if event.is_pressed():
 		note_handlers[id]._press(event)
-		press.emit()
 	else:
 		note_handlers[id]._release(event)
-		release.emit()
