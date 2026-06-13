@@ -13,6 +13,9 @@ var chart : RubiChart:
 		return starting_row.section.chart
 
 func get_millisecond_start_position() -> float:
+	if not starting_row:
+		return 0.0
+	
 	return starting_row.millisecond_time
 
 func get_millisecond_end_position() -> float:
