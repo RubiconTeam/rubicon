@@ -49,7 +49,8 @@ static func get_millisecond_at_measure(time_changes : Array[RubiconTimeChange], 
 		var previous : RubiconTimeChange = time_changes[i - 1]
 		return previous.millisecond_time + RubiconLevelClock.measure_to_millisecond(measure - previous.measure, previous.bpm, previous.time_signature_numerator)
 	
-	return 0
+	var last_time_change: RubiconTimeChange = time_changes.back()
+	return last_time_change.millisecond_time + RubiconLevelClock.measure_to_millisecond(measure - last_time_change.measure, last_time_change.bpm, last_time_change.time_signature_numerator)
 
 static func get_millisecond_at_beat(time_changes : Array[RubiconTimeChange], beat : float) -> float:
 	return get_millisecond_at_measure(time_changes, get_measure_at_beat(time_changes, beat))
