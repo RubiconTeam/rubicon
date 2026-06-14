@@ -27,8 +27,8 @@ class_name RubiconLevelNoteController extends Control
 @export var performance_accuracy_percent: float = 100
 
 @export_subgroup("Score", "performance_score_")
-@export var performance_score_max : float = 1000000
-@export var performance_score_value: float = 0
+@export var performance_score_max: int = 1000000
+@export var performance_score_value: int = 0
 
 @export_subgroup("Combo", "performance_combo_")
 @export var performance_combo_value: int = 0
@@ -138,7 +138,7 @@ func update_performance() -> void:
 	else:
 		var base_score: float = (total_value / note_count) * performance_score_max * 0.5
 		var bonus_score: float = sqrt((float(performance_combo_highest) / note_count) * 100.0) * performance_score_max * 0.05
-		performance_score_value = base_score + bonus_score
+		performance_score_value = floori(base_score + bonus_score)
 
 	performance_hits_perfect = _get_result_count_of_rating(RubiconLevelNoteHitResult.Judgment.JUDGMENT_PERFECT)
 	performance_hits_great = _get_result_count_of_rating(RubiconLevelNoteHitResult.Judgment.JUDGMENT_GREAT)
