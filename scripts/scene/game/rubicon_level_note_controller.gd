@@ -24,7 +24,7 @@ class_name RubiconLevelNoteController extends Control
 @export var disable_inputs: bool = false
 
 @export_group("Performance", "performance_")
-@export var performance_accuracy_percent: float = 1
+@export var performance_accuracy_percent: float = 100
 
 @export_subgroup("Score", "performance_score_")
 @export var performance_score_max: int = 1000000
@@ -157,9 +157,9 @@ func update_performance() -> void:
 			total_hits += 1
 
 	if total_hits == 0.0:
-		performance_accuracy_percent = 1.0
+		performance_accuracy_percent = 100.0
 	else:
-		performance_accuracy_percent = accuracy_hits / total_hits
+		performance_accuracy_percent = (accuracy_hits / total_hits) * 100
 
 	performance_updated.emit()
 
