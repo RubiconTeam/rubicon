@@ -24,7 +24,7 @@ class_name RubiconLevelNoteController extends Control
 @export var disable_inputs: bool = false
 
 @export_group("Performance", "performance_")
-@export var performance_accuracy_percent: float = 100
+@export var performance_accuracy_percent: float = 1
 
 @export_subgroup("Score", "performance_score_")
 @export var performance_score_max: int = 1000000
