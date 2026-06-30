@@ -157,9 +157,9 @@ func update_performance() -> void:
 			total_hits += 1
 
 	if total_hits == 0.0:
-		performance_accuracy_percent = 1.0
+		performance_accuracy_percent = 100.0
 	else:
-		performance_accuracy_percent = accuracy_hits / total_hits
+		performance_accuracy_percent = (accuracy_hits / total_hits) * 100
 
 	performance_updated.emit()
 
