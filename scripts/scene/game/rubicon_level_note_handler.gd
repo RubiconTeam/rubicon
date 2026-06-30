@@ -282,7 +282,7 @@ func _roll_hit_back() -> void:
 	results[note_hit_index].reset(RubiconLevelNoteHitResult.Hit.HIT_NONE)
 
 	controller.update_performance()
-	controller.note_changed.emit(results[note_hit_index])
+	controller.note_changed.emit(results[note_hit_index], data[note_hit_index].ending_row != null)
 
 func _reset_to_incomplete_note() -> void:
 	if results[note_hit_index] == null or results[note_hit_index].scoring_hit != RubiconLevelNoteHitResult.Hit.HIT_COMPLETE:
