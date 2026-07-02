@@ -252,7 +252,8 @@ func _process(delta: float) -> void:
 		get_controller().update_performance()
 
 	while not autoplay and note_hit_index < data.size() and data[note_hit_index].get_millisecond_start_position() - millisecond_position < -settings.judgment_window_bad and (results[note_hit_index] == null or results[note_hit_index].scoring_hit == RubiconLevelNoteHitResult.Hit.HIT_NONE):
-		hit_note(note_hit_index, data[note_hit_index].get_millisecond_start_position() + settings.judgment_window_bad + 1, RubiconLevelNoteHitResult.Hit.HIT_COMPLETE) # TODO: Add more forgiving hold notes
+		# TODO: LESS BANDAID FIX THEN + 1000 RATING TIME OFFSET 
+		hit_note(note_hit_index, data[note_hit_index].get_millisecond_start_position() + settings.judgment_window_bad + 1000, RubiconLevelNoteHitResult.Hit.HIT_COMPLETE) # TODO: Add more forgiving hold notes
 		note_hit_index += 1
 
 		get_controller().update_performance()
