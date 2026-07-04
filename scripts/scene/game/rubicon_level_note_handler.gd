@@ -163,6 +163,12 @@ func hit_note(index : int, time_when_hit : float, hit_type : RubiconLevelNoteHit
 
 	controller.note_changed.emit(result, has_ending_row)
 
+func _exit_tree() -> void:
+	for pool: Array in _note_pool.values():
+		for value: Variant in pool:
+			if value is Node:
+				value.free()
+
 func _notification(what: int) -> void:
 	match what:
 		NOTIFICATION_PARENTED:
