@@ -200,7 +200,7 @@ func step_change() -> void:
 		if steps_since_initial >= singing_step_time_value and modulo == 0:
 			play(_last_sing_anim, true)
 
-	if dancing_should_dance and not _handlers_pressed.values().has(true):
+	if dancing_should_dance:# and not _handlers_pressed.values().has(true):
 		var cur_step:int = floori(level_note_controller.get_level_clock().time_step)
 		if state == CharacterState.STATE_RESTING:
 			if cur_step % dancing_step_interval == 0:
