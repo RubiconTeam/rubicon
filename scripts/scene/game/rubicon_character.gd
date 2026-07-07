@@ -200,7 +200,7 @@ func step_change() -> void:
 		if steps_since_initial >= singing_step_time_value and modulo == 0:
 			play(_last_sing_anim, true)
 
-	if dancing_should_dance:# and not _handlers_pressed.values().has(true):
+	if _should_dance():
 		var cur_step:int = floori(level_note_controller.get_level_clock().time_step)
 		if state == CharacterState.STATE_RESTING:
 			if cur_step % dancing_step_interval == 0:
@@ -271,6 +271,22 @@ func update_animation_player(_old: StringName, _new: StringName) -> void:
 
 	if animation_player:
 		animation_player.seek(0.0, true)
+
+func _should_dance() -> bool:
+	if dancing_should_dance:
+		if !level_note_controller.should_autoplay() and _handlers_pressed.values().has(true):
+			for handler: int in _handlers_pressed.values().size():
+				if _handlers_pressed.values()[handler]:
+					var note_handler: RubiconLevelNoteHandler = level_note_controller.note_handlers.values()[handler]
+					
+					# behavior only for mania, as its hard to know if a note is hit on a generic handler
+					# plus the behavior is very specific to mania
+					if note_handler is RubiconLevelManiaNoteHandler and note_handler.lane_state == RubiconLevelManiaNoteHandler.LaneState.LANE_STATE_HIT:
+						return false
+		
+		return true
+	
+	return false
 
 #region Custom Property Handling
 var is_tree_root:bool:
