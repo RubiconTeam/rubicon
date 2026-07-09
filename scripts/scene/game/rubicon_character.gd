@@ -281,7 +281,7 @@ func _should_dance() -> bool:
 					
 					# behavior only for mania, as its hard to know if a note is hit on a generic handler
 					# plus the behavior is very specific to mania
-					if note_handler is RubiconLevelManiaNoteHandler and note_handler.lane_state == RubiconLevelManiaNoteHandler.LaneState.LANE_STATE_HIT:
+					if note_handler.get_mode_id() == &"mania" and note_handler.lane_state == 2: # < not gonna be left like this!! just a temporary thing
 						return false
 		
 		return true
