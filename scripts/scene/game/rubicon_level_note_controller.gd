@@ -23,6 +23,10 @@ class_name RubiconLevelNoteController extends Control
 # TODO: These could probably be named better.
 @export var disable_inputs: bool = false
 
+@export_group("Offsets", "offset_")
+@export var offset_input: float = 0.0 # In ms
+@export var offset_note_position: float = 0.0 # Also in ms
+
 @export_group("Performance", "performance_")
 @export var performance_accuracy_percent: float = 100
 
