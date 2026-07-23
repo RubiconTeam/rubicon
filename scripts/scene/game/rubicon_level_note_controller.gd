@@ -125,6 +125,10 @@ func update_performance() -> void:
 	results.sort_custom(RubiconLevelNoteHitResult.compare_results_by_time_hit)
 	for result in results:
 		total_value += result.scoring_value
+		
+		if result.handler.break_combo_indexes.has(result.data_index):
+			current_combo = 0
+			continue
 
 		match result.scoring_rating:
 			RubiconLevelNoteHitResult.Judgment.JUDGMENT_OKAY, RubiconLevelNoteHitResult.Judgment.JUDGMENT_BAD, RubiconLevelNoteHitResult.Judgment.JUDGMENT_MISS:

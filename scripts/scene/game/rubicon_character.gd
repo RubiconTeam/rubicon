@@ -44,6 +44,8 @@ class_name RubiconCharacter extends Node
 				clock.step_change.disconnect(step_change)
 			if clock.animation_player.animation_started.is_connected(song_started):
 				clock.animation_player.animation_started.disconnect(song_started)
+			
+			note_controller_connected.emit(false)
 
 		level_note_controller = value
 		notify_property_list_changed()
@@ -59,6 +61,8 @@ class_name RubiconCharacter extends Node
 			var clock:RubiconLevelClock = level_note_controller.get_level_clock()
 			clock.step_change.connect(step_change)
 			clock.animation_player.animation_started.connect(song_started)
+
+			note_controller_connected.emit(true)
 
 @export_group("Singing", "singing_")
 @export_custom(PROPERTY_HINT_GROUP_ENABLE, "") var singing_should_sing:bool = true
@@ -124,6 +128,9 @@ enum CharacterState {
 	STATE_HOLDING,
 	STATE_OVERRIDE,
 }
+
+## Emitted when a note controller is either connected or not connected.
+signal note_controller_connected(value: bool)
 
 func _valid_controller() -> bool:
 	return level_note_controller != null and level_note_controller.get_level_clock() != null

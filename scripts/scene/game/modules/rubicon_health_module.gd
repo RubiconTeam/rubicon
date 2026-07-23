@@ -12,6 +12,7 @@ class_name RubiconHealthModule
 		
 		if value != note_controller and note_controller != null and note_controller.note_changed.is_connected(note_changed):
 			note_controller.disconnect("note_changed", note_changed)
+			note_controller_connected.emit(false)
 		
 		note_controller = value
 		notify_property_list_changed()
@@ -19,6 +20,7 @@ class_name RubiconHealthModule
 		
 		if note_controller != null:
 			note_controller.connect("note_changed", note_changed)
+			note_controller_connected.emit(true)
 
 var is_tree_root:bool:
 	get():
@@ -52,6 +54,8 @@ var health:float:
 
 signal health_changed
 signal health_depleted
+
+signal note_controller_connected(connected: bool)
 
 func _get_configuration_warnings() -> PackedStringArray:
 	var warnings:PackedStringArray
