@@ -143,7 +143,8 @@ func hit_note(index : int, time_when_hit : float, hit_type : RubiconLevelNoteHit
 			rating = ratings[i]
 			break
 
-	result.scoring_rating = rating
+	if is_start or rating > result.scoring_rating:
+		result.scoring_rating = rating
 
 	var controller: RubiconLevelNoteController = get_controller()
 	var has_ending_row:bool = data[index].ending_row != null
