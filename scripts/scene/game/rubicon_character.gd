@@ -42,6 +42,8 @@ class_name RubiconCharacter extends Node
 			var clock:RubiconLevelClock = level_note_controller.get_level_clock()
 			if clock.step_change.is_connected(step_change):
 				clock.step_change.disconnect(step_change)
+			if clock.time_change_set.is_connected(_clock_time_change_set):
+				clock.time_change_set.disconnect(_clock_time_change_set)
 			if clock.animation_player.animation_started.is_connected(song_started):
 				clock.animation_player.animation_started.disconnect(song_started)
 			
@@ -60,6 +62,7 @@ class_name RubiconCharacter extends Node
 
 			var clock:RubiconLevelClock = level_note_controller.get_level_clock()
 			clock.step_change.connect(step_change)
+			clock.time_change_set.connect(_clock_time_change_set)
 			clock.animation_player.animation_started.connect(song_started)
 
 			note_controller_connected.emit(true)
@@ -79,7 +82,16 @@ class_name RubiconCharacter extends Node
 
 @export_group("Dancing", "dancing_")
 @export_custom(PROPERTY_HINT_GROUP_ENABLE, "") var dancing_should_dance:bool = true
-@export var dancing_step_interval:int = 8
+@export var dancing_measure_step: float = 0.5:
+	set(value):
+		if is_equal_approx(dancing_measure_step, value):
+			return
+		
+		_dance_measure_step = value
+		_clock_time_change_set()
+	get:
+		return _dance_measure_step
+
 @export var dancing_force_dance:bool = true
 @export_storage var dancing_animations:Array[StringName] = []:
 	set(value):
@@ -104,7 +116,11 @@ var _last_result:RubiconLevelNoteHitResult
 var _last_sing_anim:StringName
 var _last_sing_step:float
 
+var _dance_measure_step: float = 0.5
+var _dance_step_offset: int = 0
+var _dance_step_interval: int = 8
 var _last_dance_step:int
+
 var _dance_anim_index:int
 var _dance_anim_size:int
 
@@ -210,7 +226,7 @@ func step_change() -> void:
 	if _should_dance():
 		var cur_step:int = floori(level_note_controller.get_level_clock().time_step)
 		if state == CharacterState.STATE_RESTING:
-			if cur_step % dancing_step_interval == 0:
+			if (cur_step - _dance_step_offset) % _dance_step_interval == 0:
 				state = CharacterState.STATE_DANCING
 
 func song_started(anim_name:StringName) -> void:
@@ -294,6 +310,24 @@ func _should_dance() -> bool:
 		return true
 	
 	return false
+
+func _clock_time_change_set() -> void:
+	if not _valid_controller():
+		return
+
+	var clock: RubiconLevelClock = level_note_controller.get_level_clock()
+	var time_change: RubiconTimeChange = clock._last_time_change
+	_dance_step_offset = RubiconTimeChange.get_step_at_measure(clock.get_time_changes(), time_change.measure)
+
+	_recalculate_dance_step()
+
+func _recalculate_dance_step() -> void:
+	if not _valid_controller():
+		return
+
+	var clock: RubiconLevelClock = level_note_controller.get_level_clock()
+	var time_change: RubiconTimeChange = clock._last_time_change
+	_dance_step_interval = floori(time_change.time_signature_numerator * time_change.time_signature_denominator * dancing_measure_step)
 
 #region Custom Property Handling
 var is_tree_root:bool:

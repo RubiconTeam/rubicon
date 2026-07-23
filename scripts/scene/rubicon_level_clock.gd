@@ -63,6 +63,7 @@ var _cached_step: float
 signal measure_change
 signal beat_change
 signal step_change
+signal time_change_set
 
 func get_time_precise() -> float:
 	return _current_frame_time + (Time.get_unix_time_from_system() - _relative_time_offset) * 1000.0
@@ -156,7 +157,9 @@ func recalculate_cache() -> void:
 	var changes := get_time_changes()
 	for change: RubiconTimeChange in changes:
 		if change.measure <= time_measure:
-			_last_time_change = change
+			if _last_time_change != change:
+				_last_time_change = change
+				time_change_set.emit()
 		else:
 			break
 
