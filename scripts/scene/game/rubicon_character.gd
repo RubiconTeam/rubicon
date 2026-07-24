@@ -317,6 +317,9 @@ func _clock_time_change_set() -> void:
 
 	var clock: RubiconLevelClock = level_note_controller.get_level_clock()
 	var time_change: RubiconTimeChange = clock._last_time_change
+	if not time_change:
+		return
+
 	_dance_step_offset = RubiconTimeChange.get_step_at_measure(clock.get_time_changes(), time_change.measure)
 
 	_recalculate_dance_step()
