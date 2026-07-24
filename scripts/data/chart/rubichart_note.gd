@@ -10,7 +10,10 @@ var ending_row : RubiChartRow
 
 var chart : RubiChart:
 	get:
-		return starting_row.section.chart
+		if starting_row and starting_row.section and starting_row.section.chart:
+			return starting_row.section.chart
+		
+		return null
 
 func get_millisecond_start_position() -> float:
 	if not starting_row:
