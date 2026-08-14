@@ -100,7 +100,7 @@ static func get_measure_at_step(time_changes : Array[RubiconTimeChange], step : 
 		var current : RubiconTimeChange = time_changes[i]
 		var previous : RubiconTimeChange = time_changes[i - 1]
 		
-		var step_length : float = RubiconLevelClock.measure_to_beats(current.measure - previous.measure, previous.time_signature_numerator)
+		var step_length : float = RubiconLevelClock.measure_to_steps(current.measure - previous.measure, previous.time_signature_numerator)
 		if step_count + step_length > step:
 			return previous.measure + RubiconLevelClock.steps_to_measures(step - step_count, previous.time_signature_numerator, previous.time_signature_denominator)
 		
