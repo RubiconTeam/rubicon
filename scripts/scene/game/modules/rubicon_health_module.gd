@@ -35,6 +35,9 @@ var is_tree_root:bool:
 @export var max_health:float = 100.0
 @export_storage var starting_health:float
 
+@export var health_gain_mutli:float = 1.0
+@export var health_lose_mutli:float = 1.0
+
 var health:float:
 	set(value):
 		if value <= min_health:
@@ -76,6 +79,11 @@ func note_changed(result:RubiconLevelNoteHitResult, has_ending_row:bool = false)
 		var health_addition:float = get(&"%s_health_addition" % [rating_name.to_lower().erase(0, 9)])
 		if result.scoring_hit == RubiconLevelNoteHitResult.Hit.HIT_INCOMPLETE:
 			health_addition *= 0.5
+
+		if health_addition > 0.0:
+			health_addition *= health_gain_mutli
+		else:
+			health_addition *= health_lose_mutli
 		
 		health += health_addition
 
