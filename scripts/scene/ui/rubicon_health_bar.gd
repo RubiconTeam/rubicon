@@ -18,10 +18,10 @@ class_name RubiconHealthBar
 	set(_value):
 		path_follow = _value
 		_on_value_changed(value)
-@export_tool_button("Flip Bar", "Blend") var flip_bar_button:Callable
+#@export_tool_button("Flip Bar", "Blend") var flip_bar_button:Callable
 
 func _ready() -> void:
-	flip_bar_button = flip_bar
+	#flip_bar_button = flip_bar
 	_on_value_changed(value)
 	
 	if health_module != null:
