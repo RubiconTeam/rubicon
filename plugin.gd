@@ -19,16 +19,17 @@ func _enter_tree() -> void:
 	if not ResourceLoader.exists(note_database_path):
 		ResourceSaver.save(RubiconLevelNoteDatabase.new(), note_database_path)
 	
-	_instance = CREATE_CONTEXT_MENU_PLUGIN.new()
-	_instance.connect("popup_menu", _popup_menu)
+	if Engine.is_editor_hint():
+		_instance = CREATE_CONTEXT_MENU_PLUGIN.new()
+		_instance.connect("popup_menu", _popup_menu)
+		
+		add_context_menu_plugin(EditorContextMenuPlugin.CONTEXT_SLOT_FILESYSTEM_CREATE, _instance)
 	
-	add_context_menu_plugin(EditorContextMenuPlugin.CONTEXT_SLOT_FILESYSTEM_CREATE, _instance)
+		playtest_checkbox = CheckBox.new()
+		playtest_checkbox.text = "Playtest Level"
+		playtest_checkbox.connect("pressed", playtest_checked)
 	
-	playtest_checkbox = CheckBox.new()
-	playtest_checkbox.text = "Playtest Level"
-	playtest_checkbox.connect("pressed", playtest_checked)
-	
-	connect("scene_changed", _scene_changed)
+		connect("scene_changed", _scene_changed)
 
 func _exit_tree() -> void:
 	playtest_checkbox.queue_free()
