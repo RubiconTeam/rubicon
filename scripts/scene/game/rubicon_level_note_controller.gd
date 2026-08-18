@@ -228,6 +228,19 @@ func _notification(what: int) -> void:
 					break
 
 				parent = parent.get_parent()
+		
+		NOTIFICATION_EDITOR_PRE_SAVE:
+			# reset performance on scene save to avoid unnecessary commits!
+			performance_accuracy_percent = 100.0
+			performance_score_value = 0
+			performance_combo_value = 0
+			performance_combo_highest = 0
+			performance_hits_perfect = 0
+			performance_hits_great = 0
+			performance_hits_good = 0
+			performance_hits_okay = 0
+			performance_hits_bad = 0
+			performance_hits_miss = 0
 
 func _validate_property(property: Dictionary) -> void:
 	var property_name: String = property.name
