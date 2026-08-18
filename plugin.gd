@@ -4,6 +4,7 @@ extends EditorPlugin
 const CREATE_CONTEXT_MENU_PLUGIN = preload("res://addons/rubicon/scripts/create_context_menu_plugin.gd")
 var _instance:EditorContextMenuPlugin
 
+var valid_rubicon_level: bool = false
 var playtesting_level:bool = false:
 	set(value):
 		playtesting_level = value
@@ -65,9 +66,12 @@ func _create_popup(paths:PackedStringArray, popup_scene:PackedScene, confirm_cal
 func _scene_changed(scene_root:Node) -> void:
 	if scene_root is RubiconLevel:
 		add_control_to_container(CONTAINER_CANVAS_EDITOR_MENU, playtest_checkbox)
+		valid_rubicon_level = true
 	else:
-		disable_playtesting()
-		remove_control_from_container(CONTAINER_CANVAS_EDITOR_MENU, playtest_checkbox)
+		if valid_rubicon_level:
+			valid_rubicon_level = false
+			disable_playtesting()
+			remove_control_from_container(CONTAINER_CANVAS_EDITOR_MENU, playtest_checkbox)
 
 func playtest_checked() -> void:
 	if get_tree() != null and !(get_tree().edited_scene_root is RubiconLevel):
