@@ -1,11 +1,11 @@
-[gd_scene load_steps=3 format=3 uid="uid://c88e785mvxc0d"]
+[gd_scene format=3 uid="uid://c88e785mvxc0d"]
 
 [ext_resource type="Script" uid="uid://d62t527ab1ba" path="res://addons/rubicon/scripts/scene/ui/rubicon_judgment_display.gd" id="1_d82mn"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_d82mn"]
 font_size = 24
 
-[node name="Judgment" type="Control" node_paths=PackedStringArray("animation_player")]
+[node name="Judgment" type="Control" unique_id=1732067903 node_paths=PackedStringArray("animation_player")]
 layout_mode = 3
 anchors_preset = 8
 anchor_left = 0.5
@@ -19,7 +19,7 @@ script = ExtResource("1_d82mn")
 animation_player = NodePath("AnimationPlayer")
 metadata/_custom_type_script = "uid://d62t527ab1ba"
 
-[node name="Label" type="Label" parent="."]
+[node name="Label" type="Label" parent="." unique_id=1465928099]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -34,4 +34,4 @@ grow_horizontal = 2
 grow_vertical = 2
 label_settings = SubResource("LabelSettings_d82mn")
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1695177674]
