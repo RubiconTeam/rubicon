@@ -175,3 +175,12 @@ func _set(property: StringName, value: Variant) -> bool:
 		health_addition.set(property, value)
 		return true
 	return false
+
+var _pre_save_health: float = 0.0
+func _notification(what: int) -> void:
+	match what:
+		NOTIFICATION_EDITOR_PRE_SAVE:
+			_pre_save_health = health
+			health = starting_health
+		NOTIFICATION_EDITOR_POST_SAVE:
+			health = _pre_save_health
