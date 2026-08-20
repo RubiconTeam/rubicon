@@ -66,6 +66,8 @@ signal handler_just_released(handler_name: StringName)
 
 func _init() -> void:
 	set_process_internal(true)
+	if !is_in_group("controllers"):
+		add_to_group("controllers", true)
 
 func get_note_database() -> Dictionary[StringName, RubiconLevelNoteMetadata]:
 	return _internal_note_database
