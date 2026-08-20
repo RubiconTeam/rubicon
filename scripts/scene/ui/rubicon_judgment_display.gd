@@ -35,11 +35,18 @@ func _get_configuration_warnings() -> PackedStringArray:
 func _notification(what: int) -> void:
 	match what:
 		NOTIFICATION_EDITOR_PRE_SAVE:
-			$Label.text = ""
+			animation_player.play(&"RESET")
 
 # must implement proper functionality, it currently only displays scoring_hit.
 func note_changed(result:RubiconLevelNoteHitResult, has_ending_row:bool = false):
-	if result != null and result.scoring_hit != RubiconLevelNoteHitResult.Hit.HIT_COMPLETE:
+	if result == null:
 		return
 	
-	$Label.text = str(result.Judgment.find_key(result.scoring_rating)).erase(0, 9)
+	var is_valid_hit: bool = result.scoring_hit == result.Hit.HIT_COMPLETE and !has_ending_row
+	var is_starting_hold: bool = result.scoring_hit == result.Hit.HIT_INCOMPLETE and has_ending_row
+	
+	if !is_valid_hit and !is_starting_hold:
+		return
+	
+	animation_player.play(str(result.Judgment.find_key(result.scoring_rating)).to_lower())
+	animation_player.seek(0.0)
