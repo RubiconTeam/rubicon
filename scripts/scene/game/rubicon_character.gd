@@ -93,13 +93,13 @@ class_name RubiconCharacter extends Node
 		return _dance_measure_step
 
 @export var dancing_force_dance:bool = true
-@export_storage var dancing_animations:Array[StringName] = []:
+@export_storage var _dancing_animations:Array[StringName] = []:
 	set(value):
-		if value == dancing_animations:
+		if value == _dancing_animations:
 			return
 
-		dancing_animations = value
-		_dance_anim_size = dancing_animations.size()
+		_dancing_animations = value
+		_dance_anim_size = _dancing_animations.size()
 		_dance_anim_index = 0
 
 @export_group("Transitions", "transition_")
@@ -205,7 +205,7 @@ func _process(delta: float) -> void:
 				play(_last_sing_anim, true)
 
 	if dancing_should_dance and state == CharacterState.STATE_DANCING:
-		if animation_player.is_playing() and dancing_animations.has(animation_player.current_animation) and !dancing_force_dance:
+		if animation_player.is_playing() and _dancing_animations.has(animation_player.current_animation) and !dancing_force_dance:
 			return
 
 		_last_dance_step = floori(level_note_controller.get_level_clock().time_step)
@@ -241,10 +241,10 @@ func _handler_released(id: StringName) -> void:
 	_handlers_pressed[id] = false
 
 func _dance() -> void:
-	if dancing_animations.is_empty():
+	if _dancing_animations.is_empty():
 		return
 
-	var anim:StringName = dancing_animations[_dance_anim_index]
+	var anim:StringName = _dancing_animations[_dance_anim_index]
 	if !anim.is_empty() and anim != &"None":
 		play(anim, true)
 
@@ -374,7 +374,7 @@ func _get_configuration_warnings() -> PackedStringArray:
 	if !is_tree_root and level_note_controller == null:
 		warnings.append(tr(&"Characters require a note controller to work. Make sure to assign one under the character's properties"))
 
-	if dancing_should_dance and dancing_animations.is_empty():
+	if dancing_should_dance and _dancing_animations.is_empty():
 		warnings.append(tr(&"There is no current dance animation. Define it in Dancing > Animations"))
 
 	#if animations.has(null) or animations.has(&""):
@@ -556,7 +556,7 @@ func _get(property: StringName) -> Variant:
 		return callable
 
 	if property == &"dancing_animations":
-		return dancing_animations
+		return _dancing_animations
 
 	return null
 
@@ -575,9 +575,9 @@ func _set(property: StringName, value: Variant) -> bool:
 		animations[property] = value
 		return true
 
-	#if property == &"dancing_animations":
-		#dancing_animations = value
-		#return true
+	if property == &"dancing_animations":
+		_dancing_animations = value
+		return true
 
 	return false
 
