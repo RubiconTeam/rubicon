@@ -36,6 +36,8 @@ var _level:RubiconLevel:
 		_level = value
 		set_level()
 
+var _start_timer: SceneTreeTimer
+
 func _ready() -> void:
 	set_process_internal(true)
 	connect(&"child_entered_tree", added_player_child)
@@ -87,15 +89,20 @@ func start_playing() -> void:
 	for player:AudioStreamPlayer in audio_players:
 		var start_time:float = _level.clock.animation_player.current_animation_position + offset
 		if start_time < 0:
-			var timer:SceneTreeTimer = get_tree().create_timer(abs(start_time))
-			timer.timeout.connect(start_playing)
+			_start_timer = get_tree().create_timer(abs(start_time))
+			_start_timer.timeout.connect(start_playing)
 			return
+		
 		player.play(start_time)
 
 func stop_playing() -> void:
 	playing = false
 	for player:AudioStreamPlayer in audio_players:
 		player.stop()
+	
+	if _start_timer and _start_timer.time_left > 0:
+		_start_timer.timeout.disconnect(start_playing)
+		_start_timer = null
 
 func added_player_child(_node: Node) -> void:
 	if !(_node is AudioStreamPlayer) and audio_players.has(_node):
@@ -115,7 +122,6 @@ func check_for_desync() -> void:
 	
 	var anim_player_time:float = _level.clock.animation_player.current_animation_position + offset
 	if abs(sync_reference_player.get_playback_position() - anim_player_time) > sync_desync_threshold:
-		#print("Resynced audio.")
 		for player:AudioStreamPlayer in audio_players:
 			if player.playing:
 				player.seek(anim_player_time)
@@ -137,3 +143,11 @@ func _notification(what: int) -> void:
 					break
 				
 				parent = parent.get_parent()
+		
+		NOTIFICATION_PAUSED:
+			stop_playing()
+		
+		NOTIFICATION_UNPAUSED:
+			if _level != null:
+				print("nwo!")
+				start_playing()
