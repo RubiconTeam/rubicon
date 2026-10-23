@@ -149,5 +149,4 @@ func _notification(what: int) -> void:
 		
 		NOTIFICATION_UNPAUSED:
 			if _level != null:
-				print("nwo!")
 				start_playing()
