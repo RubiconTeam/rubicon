@@ -170,17 +170,17 @@ func note_changed(result:RubiconLevelNoteHitResult, has_ending_row:bool = false)
 	_last_sing_step = floori(level_note_controller.get_level_clock().time_step)
 
 	if result.scoring_rating == RubiconLevelNoteHitResult.Judgment.JUDGMENT_MISS:
-		play(_last_sing_anim, true)
+		play(_last_sing_anim, !_last_sing_anim.is_empty())
 		state = CharacterState.STATE_SINGING
 		return
 	
 	match result.scoring_hit:
 		RubiconLevelNoteHitResult.Hit.HIT_INCOMPLETE:
-			play(_last_sing_anim, true)
+			play(_last_sing_anim, !_last_sing_anim.is_empty())
 			state = CharacterState.STATE_HOLDING
 
 			if singing_hold_type == CharacterHoldType.FREEZE:
-				play(_last_sing_anim, true)
+				play(_last_sing_anim, !_last_sing_anim.is_empty())
 				animation_player.pause()
 
 		RubiconLevelNoteHitResult.Hit.HIT_COMPLETE:
@@ -188,7 +188,7 @@ func note_changed(result:RubiconLevelNoteHitResult, has_ending_row:bool = false)
 			if has_ending_row and singing_hold_type != CharacterHoldType.FREEZE:
 				return
 
-			play(_last_sing_anim, true)
+			play(_last_sing_anim, !_last_sing_anim.is_empty())
 
 func _process(delta: float) -> void:
 	if !_valid_references():
@@ -202,7 +202,7 @@ func _process(delta: float) -> void:
 
 		if state == CharacterState.STATE_HOLDING and singing_hold_type == CharacterHoldType.REPEAT:
 			if animation_player.is_playing() and animation_player.current_animation_position > singing_repeat_loop_point:
-				play(_last_sing_anim, true)
+				play(_last_sing_anim, !_last_sing_anim.is_empty())
 
 	if dancing_should_dance and state == CharacterState.STATE_DANCING:
 		if animation_player.is_playing() and _dancing_animations.has(animation_player.current_animation) and !dancing_force_dance:
@@ -221,7 +221,7 @@ func step_change() -> void:
 		var steps_since_initial:int = cur_step - _last_sing_step
 		var modulo:float = fmod(steps_since_initial, singing_step_time_value)
 		if steps_since_initial >= singing_step_time_value and modulo == 0:
-			play(_last_sing_anim, true)
+			play(_last_sing_anim, !_last_sing_anim.is_empty())
 
 	if _should_dance():
 		var cur_step:int = floori(level_note_controller.get_level_clock().time_step)
@@ -246,7 +246,7 @@ func _dance() -> void:
 
 	var anim:StringName = _dancing_animations[_dance_anim_index]
 	if !anim.is_empty() and anim != &"None":
-		play(anim, true)
+		play(anim, !anim.is_empty())
 
 	_dance_anim_index = wrapi(_dance_anim_index + 1, 0, _dance_anim_size)
 
