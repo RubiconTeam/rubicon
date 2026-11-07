@@ -48,6 +48,8 @@ class_name RubiconLevelNoteController extends Control
 
 var note_handlers : Dictionary[String, RubiconLevelNoteHandler]
 
+var connected_characters: Array[RubiconCharacter] = []
+
 var _chart : RubiChart
 var _chart_dirty : bool = false
 
@@ -60,6 +62,9 @@ static var is_playtesting:bool
 
 signal note_changed(result:RubiconLevelNoteHitResult, has_ending_row:bool)
 signal performance_updated
+
+signal character_connected(index: int)
+signal character_disconnected(character: RubiconCharacter)
 
 signal handler_just_pressed(handler_name: StringName)
 signal handler_just_released(handler_name: StringName)
@@ -275,3 +280,36 @@ func _input(event: InputEvent) -> void:
 		note_handlers[id]._press(event)
 	else:
 		note_handlers[id]._release(event)
+
+func get_character_list(character: RubiconCharacter) -> Array[RubiconCharacter]:
+	var new_character_list: Array[RubiconCharacter] = connected_characters.duplicate()
+	return new_character_list
+
+func _add_character_to_list(character: RubiconCharacter) -> int:
+	var prev_index: int = connected_characters.find(character)
+	if prev_index != -1:
+		return prev_index
+	
+	connected_characters.append(character)
+	var new_index: int = connected_characters.size() - 1
+	character_connected.emit(new_index)
+	
+	return new_index
+
+func _remove_character_from_list(index: int) -> void:
+	var array_size: int = connected_characters.size()
+	if index >= array_size or index < 0:
+		return
+	
+	var removed_character: RubiconCharacter = connected_characters[index]
+	removed_character.note_controller_index = -1
+	#print("removed character idx: %s" % [index])
+	
+	if index != array_size - 1:
+		var last_character: RubiconCharacter = connected_characters.pop_back()
+		connected_characters[index] = last_character
+		last_character.note_controller_index = index
+	else:
+		connected_characters.pop_back()
+	
+	character_disconnected.emit(removed_character)

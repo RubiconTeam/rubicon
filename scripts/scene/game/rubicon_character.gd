@@ -25,20 +25,20 @@ class_name RubiconCharacter extends Node
 	set(value):
 		if value == level_note_controller:
 			return
-
+		
 		if is_tree_root and level_note_controller == null:
 			printerr("Not recommended to assign a Note Controller on a character's scene (unless you know what you're doing!)")
-
+		
 		if level_note_controller != null:
 			if level_note_controller.note_changed.is_connected(note_changed):
 				level_note_controller.note_changed.disconnect(note_changed)
 			
 			if level_note_controller.handler_just_pressed.is_connected(_handler_pressed):
 				level_note_controller.handler_just_pressed.disconnect(_handler_pressed)
-
+			
 			if level_note_controller.handler_just_released.is_connected(_handler_released):
 				level_note_controller.handler_just_released.disconnect(_handler_released)
-
+			
 			var clock:RubiconLevelClock = level_note_controller.get_level_clock()
 			if clock.step_change.is_connected(step_change):
 				clock.step_change.disconnect(step_change)
@@ -48,24 +48,27 @@ class_name RubiconCharacter extends Node
 				clock.animation_player.animation_started.disconnect(song_started)
 			
 			note_controller_connected.emit(false)
-
+			if note_controller_index != -1:
+				level_note_controller._remove_character_from_list(note_controller_index)
+		
 		level_note_controller = value
 		notify_property_list_changed()
 		update_configuration_warnings()
-
+		
 		if level_note_controller != null:
 			level_note_controller.note_changed.connect(note_changed)
-
+			
 			_handlers_pressed.clear()
 			level_note_controller.handler_just_pressed.connect(_handler_pressed)
 			level_note_controller.handler_just_released.connect(_handler_released)
-
+			
 			var clock:RubiconLevelClock = level_note_controller.get_level_clock()
 			clock.step_change.connect(step_change)
 			clock.time_change_set.connect(_clock_time_change_set)
 			clock.animation_player.animation_started.connect(song_started)
-
+			
 			note_controller_connected.emit(true)
+			note_controller_index = level_note_controller._add_character_to_list(self)
 
 @export_group("Singing", "singing_")
 @export_custom(PROPERTY_HINT_GROUP_ENABLE, "") var singing_should_sing:bool = true
@@ -74,7 +77,7 @@ class_name RubiconCharacter extends Node
 	set(value):
 		if value == singing_hold_type:
 			return
-
+		
 		singing_hold_type = value
 		notify_property_list_changed()
 @export_storage var singing_repeat_loop_point:float = 0.125
@@ -110,6 +113,7 @@ class_name RubiconCharacter extends Node
 @export var transition_update_queued_animations : bool = false
 
 var state:CharacterState = CharacterState.STATE_DANCING
+var note_controller_index: int = -1
 
 var _last_result:RubiconLevelNoteHitResult
 
