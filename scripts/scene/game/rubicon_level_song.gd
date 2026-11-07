@@ -124,6 +124,9 @@ func check_for_desync() -> void:
 		return
 	
 	var anim_player_time:float = _level.clock.animation_player.current_animation_position + offset
+	if anim_player_time > sync_reference_player.stream.get_length():
+		return
+	
 	if abs(sync_reference_player.get_playback_position() - anim_player_time) > sync_desync_threshold:
 		for player:AudioStreamPlayer in audio_players:
 			if player.playing:
