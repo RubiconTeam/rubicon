@@ -216,21 +216,19 @@ func _process(delta: float) -> void:
 		state = CharacterState.STATE_RESTING
 		_dance()
 
-func step_change() -> void:
+func step_change(step: int) -> void:
 	if !_valid_references():
 		return
 
 	if singing_should_sing and state == CharacterState.STATE_HOLDING and singing_hold_type == CharacterHoldType.STEP_REPEAT:
-		var cur_step:int = floori(level_note_controller.get_level_clock().time_step)
-		var steps_since_initial:int = cur_step - _last_sing_step
+		var steps_since_initial:int = step - _last_sing_step
 		var modulo:float = fmod(steps_since_initial, singing_step_time_value)
 		if steps_since_initial >= singing_step_time_value and modulo == 0:
 			play(_last_sing_anim, !_last_sing_anim.is_empty())
 
 	if _should_dance():
-		var cur_step:int = floori(level_note_controller.get_level_clock().time_step)
 		if state == CharacterState.STATE_RESTING:
-			if (cur_step - _dance_step_offset) % _dance_step_interval == 0:
+			if (step - _dance_step_offset) % _dance_step_interval == 0:
 				state = CharacterState.STATE_DANCING
 
 func song_started(anim_name:StringName) -> void:

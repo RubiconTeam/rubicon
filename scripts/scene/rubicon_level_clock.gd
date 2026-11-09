@@ -60,9 +60,9 @@ var _cached_measure: float
 var _cached_beat: float
 var _cached_step: float
 
-signal measure_change
-signal beat_change
-signal step_change
+signal measure_change(measure: int)
+signal beat_change(beat: int)
+signal step_change(step: int)
 signal time_change_set
 
 func get_time_precise() -> float:
@@ -93,22 +93,22 @@ func _process(delta: float) -> void:
 	recalculate_cache()
 
 	if step_change.has_connections():
-		var cur_step:int = floori(time_step)
-		if cur_step != _last_step:
-			_last_step = cur_step
-			step_change.emit()
+		var floored_step:int = floori(time_step)
+		if floored_step != _last_step:
+			_last_step = floored_step
+			step_change.emit(floored_step)
 
 	if beat_change.has_connections():
-		var cur_beat:int = floori(time_beat)
-		if cur_beat != _last_beat:
-			_last_beat = cur_beat
-			beat_change.emit()
+		var floored_beat:int = floori(time_beat)
+		if floored_beat != _last_beat:
+			_last_beat = floored_beat
+			beat_change.emit(floored_beat)
 
 	if measure_change.has_connections():
-		var cur_measure:int = floori(time_measure)
-		if cur_measure != _last_measure:
-			_last_measure = cur_measure
-			measure_change.emit()
+		var floored_measure:int = floori(time_measure)
+		if floored_measure != _last_measure:
+			_last_measure = floored_measure
+			measure_change.emit(floored_measure)
 
 func _notification(what: int) -> void:
 	match what:
