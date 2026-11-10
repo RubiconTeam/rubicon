@@ -119,7 +119,7 @@ func removed_player_child(_node: Node) -> void:
 	
 	audio_players.remove_at(audio_players.find(_node))
 
-func check_for_desync(_time_value: int) -> void:
+func check_for_desync(_time_value: int = -1) -> void:
 	if _level == null or sync_reference_player == null or !sync_enabled:
 		return
 	
