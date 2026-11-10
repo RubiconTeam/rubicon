@@ -81,7 +81,7 @@ class_name RubiconCharacter extends Node
 		singing_hold_type = value
 		notify_property_list_changed()
 @export_storage var singing_repeat_loop_point:float = 0.125
-@export_storage var singing_step_time_value:float = 1
+@export_storage var singing_step_time_value:int = 1
 
 @export_group("Dancing", "dancing_")
 @export_custom(PROPERTY_HINT_GROUP_ENABLE, "") var dancing_should_dance:bool = true
@@ -118,7 +118,7 @@ var note_controller_index: int = -1
 var _last_result:RubiconLevelNoteHitResult
 
 var _last_sing_anim:StringName
-var _last_sing_step:float
+var _last_sing_step: int
 
 var _dance_measure_step: float = 0.5
 var _dance_step_offset: int = 0
@@ -221,8 +221,11 @@ func step_change(step: int) -> void:
 		return
 
 	if singing_should_sing and state == CharacterState.STATE_HOLDING and singing_hold_type == CharacterHoldType.STEP_REPEAT:
+		if singing_step_time_value < 1:
+			singing_step_time_value = 1
+		
 		var steps_since_initial:int = step - _last_sing_step
-		var modulo:float = fmod(steps_since_initial, singing_step_time_value)
+		var modulo:int = steps_since_initial % singing_step_time_value
 		if steps_since_initial >= singing_step_time_value and modulo == 0:
 			play(_last_sing_anim, !_last_sing_anim.is_empty())
 
@@ -411,8 +414,10 @@ func _get_property_list() -> Array[Dictionary]:
 
 			properties.append({
 				name = &"singing_step_time_value",
-				type = TYPE_FLOAT,
-				usage = PROPERTY_USAGE_EDITOR
+				type = TYPE_INT,
+				usage = PROPERTY_USAGE_EDITOR,
+				hint = PROPERTY_HINT_RANGE,
+				hint_string = "1,16,1"
 			})
 
 	if animation_player != null:
@@ -556,7 +561,7 @@ func _get(property: StringName) -> Variant:
 		var split_name:PackedStringArray = property.split("_", false, 2)
 		var callable = Callable(self, "remove_mode").bind(split_name[2])
 		return callable
-
+	
 	if property == &"dancing_animations":
 		return _dancing_animations
 
@@ -566,21 +571,28 @@ func _set(property: StringName, value: Variant) -> bool:
 	if (property.begins_with("sing_") or property.begins_with("miss_")):
 		if value == null:
 			animations[property] = &"None"
-
+		
 		if get(property) == value:
 			return true
-
+		
 		if value.to_lower() == &"none":
 			animations[property] = ""
 			return true
-
+		
 		animations[property] = value
 		return true
-
+	
+	if property == &"singing_step_time_value" or property == &"singing_step_time":
+		if value <= 0:
+			value = 1
+		
+		singing_step_time_value = value
+		return true
+	
 	if property == &"dancing_animations":
 		_dancing_animations = value
 		return true
-
+	
 	return false
 
 func _property_can_revert(property: StringName) -> bool:
@@ -615,7 +627,7 @@ func _property_get_revert(property: StringName) -> Variant:
 				anim = _anim
 				break
 		return anim
-
+	
 	#if property == &"_note_controller":
 		#if !is_tree_root:
 			#return null
