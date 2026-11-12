@@ -112,6 +112,14 @@ class_name RubiconCharacter extends Node
 ## Used for some sprites that may look "glitchy" when an animation is queued and not updated the same frame. (Main Example: gdanimate sprites which seem to have an issue with this specifically).
 @export var transition_update_queued_animations : bool = false
 
+@export_group("Advanced", "advanced_")
+## Prevents [enum CharacterState.STATE_HOLDING] from being overriden by other hold notes reaching their end. If unsure, keep on
+@export var advanced_prevent_hold_state_override: bool = true
+
+## Controls the behavior when [enum CharacterState.STATE_SINGING] tries to override [enum CharacterState.STATE_HOLDING].[br][br]
+## This is different from [enum advanced_prevent_hold_state_override] as it controls singing requests from overriding this state.
+@export var advanced_state_override_behavior: HoldOverrideBehavior = HoldOverrideBehavior.KEEP_STATE
+
 var state:CharacterState = CharacterState.STATE_DANCING
 var note_controller_index: int = -1
 
@@ -149,6 +157,15 @@ enum CharacterState {
 	STATE_OVERRIDE,
 }
 
+enum HoldOverrideBehavior {
+	## [enum CharacterState.STATE_SINGING] will override [enum CharacterState.STATE_HOLDING] when its active. May result in hold animations getting cut shorter or not playing at all.
+	NONE,
+	## [enum CharacterState.STATE_SINGING] will not override [enum CharacterState.STATE_HOLDING] if its active. May result in sing animations being ignored.
+	PREVENT,
+	## Note hits will keep [enum CharacterState.STATE_HOLDING], but replace it with the new hit animation. May result in inaccuracy on the animation displayed, but more accuracy on the type of note being hit.
+	KEEP_STATE
+}
+
 ## Emitted when a note controller is either connected or not connected.
 signal note_controller_connected(value: bool)
 
@@ -159,34 +176,42 @@ func _valid_references() -> bool:
 	return _valid_controller() and animation_player != null
 
 func note_changed(result:RubiconLevelNoteHitResult, has_ending_row:bool = false) -> void:
-	if not singing_should_sing:
-		return
-	
-	if state == CharacterState.STATE_OVERRIDE or !_valid_controller():
+	if not singing_should_sing or state == CharacterState.STATE_OVERRIDE or !_valid_controller():
 		return
 	
 	if result.scoring_hit == RubiconLevelNoteHitResult.Hit.HIT_NONE:
 		state = CharacterState.STATE_RESTING
 		return
 	
-	# looks confusing but its a really long condition so.....
-	if (result.scoring_hit == RubiconLevelNoteHitResult.Hit.HIT_COMPLETE and 
-		state == CharacterState.STATE_HOLDING and
-		has_ending_row and
-		result.handler.get_unique_id() != _last_result.handler.get_unique_id()):
-		return
+	# Very long condition so i separated it a bit
+	if advanced_prevent_hold_state_override:
+		if (result.scoring_hit == result.Hit.HIT_COMPLETE
+		and state == CharacterState.STATE_HOLDING
+		and has_ending_row and result.handler.get_unique_id() != _last_result.handler.get_unique_id()
+		and _last_result.scoring_hit == _last_result.Hit.HIT_INCOMPLETE):
+			return
+	
+	if advanced_state_override_behavior == HoldOverrideBehavior.PREVENT:
+		if state == CharacterState.STATE_HOLDING and (result.scoring_hit == result.Hit.HIT_COMPLETE and !has_ending_row):
+			return
 	
 	_last_result = result
 	_last_sing_anim = get_anim_alias_from_result(_last_result)
 	_last_sing_step = floori(level_note_controller.get_level_clock().time_step)
-
-	if result.scoring_rating == RubiconLevelNoteHitResult.Judgment.JUDGMENT_MISS:
+	
+	if (advanced_state_override_behavior == HoldOverrideBehavior.KEEP_STATE
+	and state == CharacterState.STATE_HOLDING
+	and !has_ending_row):
+		play(_last_sing_anim, !_last_sing_anim.is_empty())
+		return
+	
+	if result.scoring_rating == result.Judgment.JUDGMENT_MISS:
 		play(_last_sing_anim, !_last_sing_anim.is_empty())
 		state = CharacterState.STATE_SINGING
 		return
 	
 	match result.scoring_hit:
-		RubiconLevelNoteHitResult.Hit.HIT_INCOMPLETE:
+		result.Hit.HIT_INCOMPLETE:
 			play(_last_sing_anim, !_last_sing_anim.is_empty())
 			state = CharacterState.STATE_HOLDING
 
@@ -194,7 +219,7 @@ func note_changed(result:RubiconLevelNoteHitResult, has_ending_row:bool = false)
 				play(_last_sing_anim, !_last_sing_anim.is_empty())
 				animation_player.pause()
 
-		RubiconLevelNoteHitResult.Hit.HIT_COMPLETE:
+		result.Hit.HIT_COMPLETE:
 			state = CharacterState.STATE_SINGING
 			if has_ending_row and singing_hold_type != CharacterHoldType.FREEZE:
 				return
