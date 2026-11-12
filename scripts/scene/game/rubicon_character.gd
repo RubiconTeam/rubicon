@@ -161,14 +161,21 @@ func _valid_references() -> bool:
 func note_changed(result:RubiconLevelNoteHitResult, has_ending_row:bool = false) -> void:
 	if not singing_should_sing:
 		return
-
+	
 	if state == CharacterState.STATE_OVERRIDE or !_valid_controller():
 		return
-
+	
 	if result.scoring_hit == RubiconLevelNoteHitResult.Hit.HIT_NONE:
 		state = CharacterState.STATE_RESTING
 		return
-
+	
+	# looks confusing but its a really long condition so.....
+	if (result.scoring_hit == RubiconLevelNoteHitResult.Hit.HIT_COMPLETE and 
+		state == CharacterState.STATE_HOLDING and
+		has_ending_row and
+		result.handler.get_unique_id() != _last_result.handler.get_unique_id()):
+		return
+	
 	_last_result = result
 	_last_sing_anim = get_anim_alias_from_result(_last_result)
 	_last_sing_step = floori(level_note_controller.get_level_clock().time_step)
