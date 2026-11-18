@@ -87,6 +87,9 @@ func set_level():
 func start_playing() -> void:
 	playing = true
 	for player:AudioStreamPlayer in audio_players:
+		if _level.clock.animation_player.current_animation == "":
+			return
+		
 		var start_time:float = _level.clock.animation_player.current_animation_position + offset
 		if start_time > player.stream.get_length():
 			return
