@@ -85,12 +85,13 @@ func set_level():
 				_level.clock.measure_change.connect(check_for_desync)
 
 func start_playing() -> void:
-	if !_level.clock.animation_player.is_animation_active():
+	var clock_player: AnimationPlayer = _level.clock.animation_player
+	if !clock_player.is_animation_active() or !clock_player.is_playing():
 		return
 	
 	playing = true
 	for player:AudioStreamPlayer in audio_players:
-		var start_time:float = _level.clock.animation_player.current_animation_position + offset
+		var start_time:float = clock_player.current_animation_position + offset
 		if start_time > player.stream.get_length():
 			return
 		
