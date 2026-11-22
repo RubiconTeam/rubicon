@@ -196,8 +196,8 @@ var state: CharacterState = CharacterState.STATE_DANCING
 ## The index of this character connected to its note controller.
 var note_controller_index: int = -1
 
-var _anim_mode_ids: Dictionary[StringName, StringName]
-var _anim_groups: Dictionary[StringName, StringName]
+@export_storage var anim_mode_ids: Dictionary[StringName, StringName]
+@export_storage var anim_groups: Dictionary[StringName, StringName]
 
 var _last_result:RubiconLevelNoteHitResult
 var _last_sing_anim: StringName
@@ -507,9 +507,11 @@ func _get_property_list() -> Array[Dictionary]:
 	
 	if animation_player != null:
 		if !animation_data.is_empty():
+			anim_groups.clear()
+			anim_mode_ids.clear()
 			for mode: StringName in animation_data.keys():
 				var mode_id: String = animation_data[mode].id
-				_anim_mode_ids[mode_id] = mode
+				anim_mode_ids[mode_id] = mode
 				properties.append({
 					name = mode.capitalize(),
 					type = TYPE_NIL,
@@ -532,7 +534,7 @@ func _get_property_list() -> Array[Dictionary]:
 						for lane: int in lane_amount:
 							var anim_id: StringName = &"%s%s_%s" % [mode_id, lane, group]
 							var final_anim_name: StringName = groups[group][anim_id] if groups[group].has(anim_id) else anim_id
-							_anim_groups[final_anim_name] = anim_id
+							anim_groups[final_anim_name] = anim_id
 
 							if !animations.has(anim_id):
 								animations[anim_id] = &""
@@ -561,8 +563,8 @@ func open_animation_manager() -> void:
 	RubiconPlugin.instance.animation_manager_instance.show()
 
 func _get(property: StringName) -> Variant:
-	if _anim_groups.has(property):
-		var anim_id: StringName = _anim_groups[property]
+	if anim_groups.has(property):
+		var anim_id: StringName = anim_groups[property]
 		if !animations.has(anim_id):
 			return no_animation_name
 		else:
@@ -573,8 +575,8 @@ func _get(property: StringName) -> Variant:
 	return null
 
 func _set(property: StringName, value: Variant) -> bool:
-	if _anim_groups.has(property):
-		var anim_id: StringName = _anim_groups[property]
+	if anim_groups.has(property):
+		var anim_id: StringName = anim_groups[property]
 		if value == null:
 			animations[anim_id] = no_animation_name
 		
