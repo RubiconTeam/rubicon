@@ -541,6 +541,7 @@ func _get_property_list() -> Array[Dictionary]:
 								if animations.has(final_anim_name):
 									animations[anim_id] = final_anim_name
 									animations.erase(final_anim_name)
+									print("Found and removed old animation, please save the scene even if there's no prompt to.")
 							
 							properties.append({
 								name = final_anim_name,
