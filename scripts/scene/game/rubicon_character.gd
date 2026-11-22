@@ -540,6 +540,7 @@ func _get_property_list() -> Array[Dictionary]:
 								# small failsafe to not break characters before this commit. will probably be removed at some point
 								if animations.has(final_anim_name):
 									animations[anim_id] = final_anim_name
+									animations.erase(final_anim_name)
 							
 							properties.append({
 								name = final_anim_name,
