@@ -1,15 +1,18 @@
 [gd_scene format=3 uid="uid://cu8d06s5mpdrx"]
 
 [ext_resource type="Script" uid="uid://c532a0406inu" path="res://addons/rubicon/scripts/editor/rubicon_animation_manager_dialog.gd" id="1_8rnhl"]
+[ext_resource type="Script" uid="uid://cmdjoloukc3ot" path="res://addons/rubicon/scripts/editor/editor_icon_setter.gd" id="2_v6j2y"]
 
-[node name="ManageAnimations" type="ConfirmationDialog" unique_id=1708168984]
+[node name="ManageAnimations" type="AcceptDialog" unique_id=1206789592 node_paths=PackedStringArray("tree")]
 oversampling_override = 1.0
+title = "Animation Manager"
 initial_position = 2
 size = Vector2i(960, 720)
 visible = true
 min_size = Vector2i(512, 512)
 content_scale_mode = 1
 script = ExtResource("1_8rnhl")
+tree = NodePath("ScrollContainer/VBoxContainer/Panel/Tree")
 
 [node name="ScrollContainer" type="ScrollContainer" parent="." unique_id=404153054]
 anchors_preset = 15
@@ -27,6 +30,38 @@ follow_focus = true
 
 [node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer" unique_id=752658510]
 layout_mode = 2
-size_flags_horizontal = 6
-size_flags_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 alignment = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="ScrollContainer/VBoxContainer" unique_id=2013250030]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/HBoxContainer" unique_id=1959755550]
+layout_mode = 2
+text = " Animation Groups:"
+
+[node name="Button" type="Button" parent="ScrollContainer/VBoxContainer/HBoxContainer" unique_id=806499834]
+layout_mode = 2
+size_flags_horizontal = 10
+text = "Add Animation Group"
+script = ExtResource("2_v6j2y")
+icon_name = &"Add"
+
+[node name="Panel" type="Panel" parent="ScrollContainer/VBoxContainer" unique_id=1311909573]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Tree" type="Tree" parent="ScrollContainer/VBoxContainer/Panel" unique_id=1591594224]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_vertical = 3
+columns = 2
+allow_rmb_select = true
+hide_root = true
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=161948897]

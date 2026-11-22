@@ -1,6 +1,7 @@
 @tool
 class_name RubiconCharacter extends Node
 
+## The main [member AnimationPlayer], used to play singing and dancing animations. It is needed for characters to work.
 @export var animation_player:AnimationPlayer:
 	set(value):
 		if value == animation_player:
@@ -21,6 +22,9 @@ class_name RubiconCharacter extends Node
 		notify_property_list_changed()
 		update_configuration_warnings()
 
+## The [member RubiconLevelNoteController] that the character attaches to.[br]
+## It is needed for characters to sing and dance, since it makes use of this controller's clock and signals to display animations.[br][br]
+## This property will not show if this [member RubiconCharacter] is the root of the scene.
 @export var level_note_controller : RubiconLevelNoteController:
 	set(value):
 		if value == level_note_controller:
@@ -71,8 +75,15 @@ class_name RubiconCharacter extends Node
 			note_controller_index = level_note_controller._add_character_to_list(self)
 
 @export_group("Singing", "singing_")
+## Enables or disables character singing.[br][br]
+## Disabling this will fully stop the singing logic by preventing the character from going into [enum STATE_SINGING], which may increase performance if disabled when not needed.
 @export_custom(PROPERTY_HINT_GROUP_ENABLE, "") var singing_should_sing:bool = true
+
+## Amount of steps the character will take to transition from singing to dancing. [br][br]
+## This is not only visual since it also delays the character from going into [enum STATE_RESTING]
 @export var singing_sing_to_dance_interval:int = 4
+
+## Changes the animation that the character displays on [enum STATE_HOLDING].
 @export var singing_hold_type:CharacterHoldType = CharacterHoldType.REPEAT:
 	set(value):
 		if value == singing_hold_type:
@@ -80,29 +91,45 @@ class_name RubiconCharacter extends Node
 		
 		singing_hold_type = value
 		notify_property_list_changed()
-@export_storage var singing_repeat_loop_point:float = 0.125
-@export_storage var singing_step_time_value:int = 1
+
+## Loop point in the animation on the [enum REPEAT] hold type.[br][br]
+## This property will only show when [member singing_hold_type] is [enum REPEAT]
+@export var singing_repeat_loop_point:float = 0.125
+
+## Step interval on the [enum STEP_REPEAT] hold type.[br][br]
+## This property will only show when [member singing_hold_type] is [enum STEP_REPEAT]
+@export var singing_step_time_value:int = 2
 
 @export_group("Dancing", "dancing_")
+
+## Enables or disables character dancing.[br][br]
+## Disabling this will fully stop the dancing logic by preventing the character from going into [enum STATE_DANCING], which may increase performance if disabled when not needed.
 @export_custom(PROPERTY_HINT_GROUP_ENABLE, "") var dancing_should_dance:bool = true
+
+## The measure interval which the character will trigger its dancing state. This value is converted into steps internally[br][br]
+## For example, 0.5 = twice a measure (or every 2 beats)
 @export var dancing_measure_step: float = 0.5:
 	set(value):
 		if is_equal_approx(dancing_measure_step, value):
 			return
 		
-		_dance_measure_step = value
+		dancing_measure_step = value
 		_clock_time_change_set()
 	get:
-		return _dance_measure_step
+		return dancing_measure_step
 
+## Forces the dancing animation to cancel the previous one if its not finished.[br][br]
+## This does not affect singing or holding animations.
 @export var dancing_force_dance:bool = true
-@export_storage var _dancing_animations:Array[StringName] = []:
+
+## The list of dance animations that will play in a sequence every [member dancing_measure_step].
+@export var dancing_animations:Array[StringName] = []:
 	set(value):
-		if value == _dancing_animations:
+		if value == dancing_animations:
 			return
 
-		_dancing_animations = value
-		_dance_anim_size = _dancing_animations.size()
+		dancing_animations = value
+		_dance_anim_size = dancing_animations.size()
 		_dance_anim_index = 0
 
 @export_group("Transitions", "transition_")
@@ -120,40 +147,100 @@ class_name RubiconCharacter extends Node
 ## This is different from [enum advanced_prevent_hold_state_override] as it controls singing requests from overriding this state.
 @export var advanced_state_override_behavior: HoldOverrideBehavior = HoldOverrideBehavior.KEEP_STATE
 
-var state:CharacterState = CharacterState.STATE_DANCING
+#@export_tool_button("Open Animation Manager", "Edit") var _animation_manager_button: Callable = open_animation_manager
+
+## Character animations for each mode.[br][br]
+## Use the Animation Manager instead of modifying this variable.
+@export_storage var animations: Dictionary[StringName,StringName] = {}
+
+## Animation data holding groups and aliases. [br][br]
+## Preferably, edit this variable through the Animation Manager instead of code.
+@export_storage var animation_data: Dictionary[StringName, Dictionary] = {
+	mania = {
+		id = &"mania_lane",
+		lane_amount = 4,
+		groups = {
+			sing = {
+				mania_lane0_sing = &"sing_left",
+				mania_lane1_sing = &"sing_down",
+				mania_lane2_sing = &"sing_up",
+				mania_lane3_sing = &"sing_right",
+			},
+			miss = {
+				mania_lane0_miss = &"miss_left",
+				mania_lane1_miss = &"miss_down",
+				mania_lane2_miss = &"miss_up",
+				mania_lane3_miss = &"miss_right",
+			},
+		}
+	}
+}
+
+## Default note directions in 4K Mania used to predict animation names
+const default_mania_directions: Array[StringName] = [&"left", &"down", &"up", &"right"]
+
+## Gets all animations in [member animation_player] and adds [NONE] as a first.
+var anim_player_list:PackedStringArray:
+	get():
+		if animation_player != null:
+			var anims:PackedStringArray = [no_animation_name]
+			anims.append_array(animation_player.get_animation_list())
+			return anims
+		return [no_animation_name]
+
+var no_animation_name: StringName = &"[NONE]"
+
+## Current character state.
+var state: CharacterState = CharacterState.STATE_DANCING
+
+## The index of this character connected to its note controller.
 var note_controller_index: int = -1
 
-var _last_result:RubiconLevelNoteHitResult
+var _anim_mode_ids: Dictionary[StringName, StringName]
+var _anim_groups: Dictionary[StringName, StringName]
 
-var _last_sing_anim:StringName
+var _last_result:RubiconLevelNoteHitResult
+var _last_sing_anim: StringName
 var _last_sing_step: int
 
-var _dance_measure_step: float = 0.5
 var _dance_step_offset: int = 0
 var _dance_step_interval: int = 8
-var _last_dance_step:int
+var _last_dance_step: int
 
-var _dance_anim_index:int
-var _dance_anim_size:int
+var _dance_anim_index: int
+var _dance_anim_size: int
 
 var _handlers_pressed: Dictionary[StringName, bool]
 
 enum CharacterHoldType {
-	## Characters will play hold notes once, as if it wasn't a hold note.
+	## Character will play hold notes once, as if it wasn't a hold note.
 	NONE,
-	## Characters will freeze on the first frame, playing the rest of if when the note is released.
+	## Character will freeze on the first frame, playing the rest of if when the note is released.
 	FREEZE,
-	## Characters will repeat the animation each time current_animation_position goes over repeat_loop_point.
+	## Character will repeat the animation each time current_animation_position goes over repeat_loop_point.
 	REPEAT,
-	## Characters will repeat the animation every step, executed in step_change().
+	## Character will repeat the animation every step, executed in step_change().
 	STEP_REPEAT,
 }
 
 enum CharacterState {
+	## Character is waiting to trigger [enum STATE_DANCING], but will listen to [enum STATE_SINGING] or [enum STATE_HOLDING].
 	STATE_RESTING,
+	
+	## Next dancing animation in the sequence will play.[br][br]
+	## This state does not wait until the right time to play the animation, as that calculation is done in [enum STATE_RESTING].
 	STATE_DANCING,
+	
+	## Triggered by [method note_changed].[br][br]
+	## Character will play its singing animation according to the note result, and the animation in [member animations]
 	STATE_SINGING,
+	
+	## Triggered by [method note_changed].[br][br]
+	## Character's note result singing animation will repeat according to [member singing_hold_type].
 	STATE_HOLDING,
+	
+	## Overrides all states, will stop all character logic.[br][br]
+	## This is never triggered organically and only exists as an utility for developers.
 	STATE_OVERRIDE,
 }
 
@@ -196,7 +283,7 @@ func note_changed(result:RubiconLevelNoteHitResult, has_ending_row:bool = false)
 			return
 	
 	_last_result = result
-	_last_sing_anim = get_anim_alias_from_result(_last_result)
+	_last_sing_anim = get_anim_from_result(_last_result)
 	_last_sing_step = floori(level_note_controller.get_level_clock().time_step)
 	
 	if (advanced_state_override_behavior == HoldOverrideBehavior.KEEP_STATE
@@ -241,7 +328,7 @@ func _process(delta: float) -> void:
 				play(_last_sing_anim, !_last_sing_anim.is_empty())
 
 	if dancing_should_dance and state == CharacterState.STATE_DANCING:
-		if animation_player.is_playing() and _dancing_animations.has(animation_player.current_animation) and !dancing_force_dance:
+		if animation_player.is_playing() and dancing_animations.has(animation_player.current_animation) and !dancing_force_dance:
 			return
 
 		_last_dance_step = floori(level_note_controller.get_level_clock().time_step)
@@ -278,11 +365,11 @@ func _handler_released(id: StringName) -> void:
 	_handlers_pressed[id] = false
 
 func _dance() -> void:
-	if _dancing_animations.is_empty():
+	if dancing_animations.is_empty():
 		return
 
-	var anim:StringName = _dancing_animations[_dance_anim_index]
-	if !anim.is_empty() and anim != &"None":
+	var anim:StringName = dancing_animations[_dance_anim_index]
+	if !anim.is_empty() and anim != no_animation_name:
 		play(anim, !anim.is_empty())
 
 	_dance_anim_index = wrapi(_dance_anim_index + 1, 0, _dance_anim_size)
@@ -309,20 +396,16 @@ func play(anim_name:StringName, warn_missing_animation:bool = false) -> void:
 		for queued_animation in same_animation_queue:
 			animation_player.queue(queued_animation)
 
-func get_anim_alias_from_result(result:RubiconLevelNoteHitResult) -> StringName:
-	var current_id : StringName = result.handler.get_unique_id()
-	var mode_aliases:Dictionary[StringName, StringName] = get(result.handler.get_mode_id().to_lower() + "_anim_aliases")
-	if mode_aliases == null or mode_aliases.is_empty():
-		printerr("Couldn't get animation alias list for mode: " + result.handler.get_mode_id().to_lower())
-		return &""
-	if !mode_aliases.has(current_id):
-		printerr("Couldn't find alias for animation: %s" % [current_id])
-		return &""
-
-	var current_anim : StringName = animations[mode_aliases[current_id]]
-	#temporary
-	if result.scoring_rating == RubiconLevelNoteHitResult.Judgment.JUDGMENT_MISS:
-		current_anim = animations[mode_aliases[current_id + &"_miss"]]
+func get_anim_from_result(result:RubiconLevelNoteHitResult) -> StringName:
+	var note_id: StringName = result.handler.get_unique_id()
+	var anim_suffix: StringName = &"sing" if result.scoring_rating != RubiconLevelNoteHitResult.Judgment.JUDGMENT_MISS else &"miss"
+	
+	var animation_name: StringName = &"%s_%s" % [note_id, anim_suffix]
+	
+	if !animations.has(animation_name):
+		printerr("Animation %s not found in the characters animations. Try resetting the animations in the inspector" % [animation_name])
+	var current_anim: StringName = animations[animation_name]
+	
 	return current_anim
 
 func update_animation_player(_old: StringName, _new: StringName) -> void:
@@ -345,7 +428,6 @@ func _should_dance() -> bool:
 						return false
 		
 		return true
-	
 	return false
 
 func _clock_time_change_set() -> void:
@@ -379,29 +461,6 @@ var is_tree_root:bool:
 			return true
 		return false
 
-@export_storage var animations:Dictionary[StringName,StringName] = {}
-var anim_player_list:PackedStringArray:
-	get():
-		if animation_player != null:
-			var anims:PackedStringArray = [&"None"]
-			anims.append_array(animation_player.get_animation_list())
-			return anims
-		return [&"None"]
-
-@export_storage var modes:Array[StringName] = [&"mania"]
-var _new_mode_name:StringName = &"":
-	set(value):
-		_new_mode_name = value.to_lower()
-var _add_mode:Callable = add_mode
-var _remove_mode:Callable = remove_mode
-var _add_animation_group:Callable = add_animation_group
-
-# Defaults for mania, as it is the targeted mode.
-@export_storage var mania_anim_aliases:Dictionary[StringName, StringName] = {"mania_lane0": "sing_left", "mania_lane1": "sing_down", "mania_lane2": "sing_up", "mania_lane3": "sing_right", "mania_lane0_miss": "miss_left", "mania_lane1_miss": "miss_down", "mania_lane2_miss": "miss_up", "mania_lane3_miss": "miss_right"}
-@export_storage var mania_anim_groups:Dictionary[StringName, int] = {"sing": 4, "miss": 4}
-# default 4k directions for anim predictions (for >4k you'll have to set them up yourself, i unfortunately cant predict your brain)
-var mania_directions:Array[StringName] = [&"left", &"down", &"up", &"right"]
-
 func _get_configuration_warnings() -> PackedStringArray:
 	var warnings:PackedStringArray
 
@@ -411,7 +470,7 @@ func _get_configuration_warnings() -> PackedStringArray:
 	if !is_tree_root and level_note_controller == null:
 		warnings.append(tr(&"Characters require a note controller to work. Make sure to assign one under the character's properties"))
 
-	if dancing_should_dance and _dancing_animations.is_empty():
+	if dancing_should_dance and dancing_animations.is_empty():
 		warnings.append(tr(&"There is no current dance animation. Define it in Dancing > Animations"))
 
 	#if animations.has(null) or animations.has(&""):
@@ -419,199 +478,112 @@ func _get_configuration_warnings() -> PackedStringArray:
 
 	return warnings
 
+func _validate_property(property: Dictionary) -> void:
+	match property.name:
+		&"dancing_animations":
+			if animation_player != null:
+				property.usage = PROPERTY_USAGE_DEFAULT
+				property.hint = PROPERTY_HINT_TYPE_STRING
+				property.hint_string = "%d/%d:%s" % [TYPE_STRING_NAME, PROPERTY_HINT_ENUM, ",".join(anim_player_list)]
+			else:
+				property.usage = PROPERTY_USAGE_STORAGE
+		
+		&"singing_repeat_loop_point":
+			property.usage = PROPERTY_USAGE_DEFAULT if singing_hold_type == CharacterHoldType.REPEAT else PROPERTY_USAGE_STORAGE
+		
+		&"singing_step_time_value":
+			property.usage = PROPERTY_USAGE_DEFAULT if singing_hold_type == CharacterHoldType.STEP_REPEAT else PROPERTY_USAGE_STORAGE
+		
+		&"level_note_controller":
+			if animation_player and !is_tree_root:
+				property.usage = PROPERTY_USAGE_DEFAULT
+				return
+			
+			property.usage = PROPERTY_USAGE_STORAGE
+
+
 func _get_property_list() -> Array[Dictionary]:
 	var properties:Array[Dictionary]
-
-	match singing_hold_type:
-		CharacterHoldType.REPEAT:
-			properties.append({
-				name = &"Singing",
-				type = TYPE_NIL,
-				usage = PROPERTY_USAGE_GROUP,
-				hint_string = "singing_",
-			})
-
-			properties.append({
-				name = &"singing_repeat_loop_point",
-				type = TYPE_FLOAT,
-				usage = PROPERTY_USAGE_EDITOR
-			})
-		CharacterHoldType.STEP_REPEAT:
-			properties.append({
-				name = &"Singing",
-				type = TYPE_NIL,
-				usage = PROPERTY_USAGE_GROUP,
-				hint_string = "singing_",
-			})
-
-			properties.append({
-				name = &"singing_step_time_value",
-				type = TYPE_INT,
-				usage = PROPERTY_USAGE_EDITOR,
-				hint = PROPERTY_HINT_RANGE,
-				hint_string = "1,16,1"
-			})
-
+	
 	if animation_player != null:
-		properties.append({
-			name = &"Dancing",
-			type = TYPE_NIL,
-			usage = PROPERTY_USAGE_GROUP,
-			hint_string = "dancing_",
-		})
-
-		properties.append({
-			name = &"dancing_animations",
-			type = TYPE_ARRAY,
-			usage = PROPERTY_USAGE_DEFAULT,
-			hint = PROPERTY_HINT_TYPE_STRING,
-			hint_string = "%d/%d:%s" % [TYPE_STRING_NAME, PROPERTY_HINT_ENUM, ",".join(anim_player_list)],
-		})
-
-		#properties.append({
-			#name = &"Animation Setup",
-			#type = TYPE_NIL,
-			#usage = PROPERTY_USAGE_CATEGORY
-		#})
-			#
-		#properties.append({
-			#name = &"_add_mode",
-			#type = TYPE_CALLABLE,
-			#hint = PROPERTY_HINT_TOOL_BUTTON,
-			#usage = PROPERTY_USAGE_EDITOR,
-			#hint_string = "Add New Game Mode,Add"
-		#})
-		#
-		#properties.append({
-			#name = &"_new_mode_name",
-			#type = TYPE_STRING_NAME,
-			#hint = PROPERTY_HINT_TYPE_STRING,
-			#usage = PROPERTY_USAGE_EDITOR
-		#})
-
-		if !modes.is_empty():
-			for mode:StringName in modes:
+		if !animation_data.is_empty():
+			for mode: StringName in animation_data.keys():
+				var mode_id: String = animation_data[mode].id
+				_anim_mode_ids[mode_id] = mode
 				properties.append({
 					name = mode.capitalize(),
 					type = TYPE_NIL,
 					usage = PROPERTY_USAGE_CATEGORY
 				})
-
-				#properties.append({
-					#name = &"_remove_mode_"+mode,
-					#type = TYPE_CALLABLE,
-					#hint = PROPERTY_HINT_TOOL_BUTTON,
-					#usage = PROPERTY_USAGE_EDITOR,
-					#hint_string = "Remove %s,Remove" % [mode.capitalize()]
-				#})
-
-				#properties.append({
-					#name = &"Add Animation Groups",
-					#type = TYPE_NIL,
-					#usage = PROPERTY_USAGE_GROUP
-				#})
-				#
-				#properties.append({
-					#name = &"_add_animation_group",
-					#type = TYPE_CALLABLE,
-					#hint = PROPERTY_HINT_TOOL_BUTTON,
-					#usage = PROPERTY_USAGE_EDITOR,
-					#hint_string = "Add Animation Group,Add"
-				#})
-				#
-				#var mode_groups:Dictionary[StringName, int] = get("%s_anim_groups" % [mode])
 				
-				# fuck it, hardcoded for now!!!
-				var mode_groups:Dictionary[StringName, int] = {&"sing": 4, &"miss": 4}
-				for i:int in mode_groups.size():
-					var group_name:StringName = mode_groups.keys()[i]
-					var group_prefix:StringName = "%s_" % [group_name.to_lower()]
-					properties.append({
-						name = group_name.capitalize(),
-						type = TYPE_NIL,
-						usage = PROPERTY_USAGE_GROUP,
-						hint_string = group_prefix
-					})
-
-					#properties.append({
-						#name = &"Aliases",
-						#type = TYPE_NIL,
-						#usage = PROPERTY_USAGE_SUBGROUP,
-						#hint_string = "alias_"
-					#})
-					#
-					#for group_size:int in mode_groups[group_name]:
-						#properties.append({
-							#name = &"alias_%s_lane%s" % [mode, str(group_size)],
-							#type = TYPE_STRING_NAME,
-							#hint = PROPERTY_HINT_TYPE_STRING,
-							#usage = PROPERTY_USAGE_EDITOR
-						#})
-
-					for group_size:int in mode_groups[group_name]:
-						var anim_id:StringName = &"%s_lane%s" % [mode, str(group_size)]
-						if group_name.contains("miss"):
-							anim_id += &"_miss"
-						
+				var anim_data: Dictionary = animation_data[mode]
+				if anim_data.has("lane_amount") and anim_data.has("groups"):
+					var lane_amount: int = anim_data.lane_amount
+					var groups: Dictionary = anim_data.groups
+					
+					for group: String in groups.keys():
 						properties.append({
-							name = mania_anim_aliases[anim_id] if mania_anim_aliases.has(anim_id) else anim_id,
-							hint = PROPERTY_HINT_ENUM,
-							type = TYPE_STRING_NAME,
-							usage = PROPERTY_USAGE_EDITOR,
-							hint_string = ",".join(anim_player_list)
+							name = group.capitalize(),
+							type = TYPE_NIL,
+							usage = PROPERTY_USAGE_GROUP,
+							hint_string = "%s_" % [group.to_lower()]
 						})
+						
+						for lane: int in lane_amount:
+							var anim_id: StringName = &"%s%s_%s" % [mode_id, lane, group]
+							var final_anim_name: StringName = groups[group][anim_id] if groups[group].has(anim_id) else anim_id
+							_anim_groups[final_anim_name] = anim_id
+
+							if !animations.has(anim_id):
+								animations[anim_id] = &""
+								
+								# small failsafe to not break characters before this commit. will probably be removed at some point
+								if animations.has(final_anim_name):
+									animations[anim_id] = final_anim_name
+							
+							properties.append({
+								name = final_anim_name,
+								hint = PROPERTY_HINT_ENUM,
+								type = TYPE_STRING_NAME,
+								usage = PROPERTY_USAGE_EDITOR,
+								hint_string = ",".join(anim_player_list)
+							})
 
 	return properties
 
-func add_mode() -> void:
-	if modes.find(_new_mode_name) != -1 or _new_mode_name.is_empty():
+func open_animation_manager() -> void:
+	if !Engine.is_editor_hint() or RubiconPlugin.instance == null:
 		return
-
-	modes.append(_new_mode_name)
-	_new_mode_name = &""
-	notify_property_list_changed()
-
-func remove_mode(mode_name:StringName) -> void:
-	var mode_idx:int = modes.find(mode_name)
-	modes.pop_at(mode_idx)
-	notify_property_list_changed()
-
-func add_animation_group() -> void:
-	pass
+	
+	RubiconPlugin.instance.animation_manager_instance.character = self
+	RubiconPlugin.instance.animation_manager_instance.show()
 
 func _get(property: StringName) -> Variant:
-	if property.begins_with("sing_") or property.begins_with("miss_"):
-		if !animations.has(property):
-			return "None"
-		if animations.has(property):
-			if !anim_player_list.has(animations[property]):
-				return property_get_revert(property)
-			return animations[property]
+	if _anim_groups.has(property):
+		var anim_id: StringName = _anim_groups[property]
+		if !animations.has(anim_id):
+			return no_animation_name
+		else:
+			if anim_player_list.has(animations[anim_id]):
+				return animations[anim_id]
 		return property_get_revert(property)
-
-	if property.begins_with("_remove_mode_"):
-		var split_name:PackedStringArray = property.split("_", false, 2)
-		var callable = Callable(self, "remove_mode").bind(split_name[2])
-		return callable
 	
-	if property == &"dancing_animations":
-		return _dancing_animations
-
 	return null
 
 func _set(property: StringName, value: Variant) -> bool:
-	if (property.begins_with("sing_") or property.begins_with("miss_")):
+	if _anim_groups.has(property):
+		var anim_id: StringName = _anim_groups[property]
 		if value == null:
-			animations[property] = &"None"
+			animations[anim_id] = no_animation_name
 		
 		if get(property) == value:
 			return true
 		
-		if value.to_lower() == &"none":
-			animations[property] = ""
+		if value.to_lower() == no_animation_name:
+			animations[anim_id] = ""
 			return true
 		
-		animations[property] = value
+		animations[anim_id] = value
 		return true
 	
 	if property == &"singing_step_time_value" or property == &"singing_step_time":
@@ -621,38 +593,21 @@ func _set(property: StringName, value: Variant) -> bool:
 		singing_step_time_value = value
 		return true
 	
-	if property == &"dancing_animations":
-		_dancing_animations = value
-		return true
-	
 	return false
 
 func _property_can_revert(property: StringName) -> bool:
 	if property.begins_with("sing_") or property.begins_with("miss_"):
-		if get(property).to_lower() == &"none":
+		if get(property).to_lower() == no_animation_name.to_lower():
 			return false
 		return true
-
-	#if property == &"_note_controller" and (note_controller_path != null or !note_controller_path.is_empty()):
-		#return true
-
-	#match property:
-		#&"repeat_loop_point":
-			#if repeat_loop_point == 0.125:
-				#return false
-			#return true
-		#&"step_time_value":
-			#if step_time_value == 1:
-				#return false
-			#return true
-
+	
 	return false
 
 func _property_get_revert(property: StringName) -> Variant:
 	if property.begins_with("sing_") or property.begins_with("miss_"):
-		var dir_idx:int = mania_directions.find(property.get_slice("_", 1))
-		var direction:StringName = mania_directions[dir_idx]
-		var anim:StringName = &"None"
+		var dir_idx:int = default_mania_directions.find(property.get_slice("_", 1))
+		var direction:StringName = default_mania_directions[dir_idx]
+		var anim:StringName = no_animation_name
 		for _anim:StringName in anim_player_list:
 			var anim_lower:StringName = _anim.to_lower()
 			if anim_lower.contains(direction) and anim_lower.contains(property.get_slice("_", 0)):
@@ -660,20 +615,5 @@ func _property_get_revert(property: StringName) -> Variant:
 				break
 		return anim
 	
-	#if property == &"_note_controller":
-		#if !is_tree_root:
-			#return null
-		##return find_child()
-
-	match property:
-		&"_camera_point":
-			if !is_tree_root:
-				return null
-			return find_child("*oint")
-		#&"repeat_loop_point":
-			#return 0.125
-		#&"step_time_value":
-			#return 1
-
 	return null
 #endregion
