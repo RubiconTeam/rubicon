@@ -196,8 +196,8 @@ var state: CharacterState = CharacterState.STATE_DANCING
 ## The index of this character connected to its note controller.
 var note_controller_index: int = -1
 
-@export_storage var anim_mode_ids: Dictionary[StringName, StringName]
-@export_storage var anim_groups: Dictionary[StringName, StringName]
+@export_storage var anim_mode_ids: Dictionary[StringName, StringName] = {}
+@export_storage var anim_groups: Dictionary[StringName, StringName] = {}
 
 var _last_result:RubiconLevelNoteHitResult
 var _last_sing_anim: StringName
