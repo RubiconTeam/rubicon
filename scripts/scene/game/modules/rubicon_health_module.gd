@@ -33,10 +33,10 @@ var is_tree_root:bool:
 
 @export var min_health:float = 0.0
 @export var max_health:float = 100.0
-@export_storage var starting_health:float
+@export var starting_health:float = 50.0
 
-@export var health_gain_mutli:float = 1.0
-@export var health_lose_mutli:float = 1.0
+@export var health_gain_mutliplier:float = 1.0
+@export var health_lose_mutliplier:float = 1.0
 
 var health:float:
 	set(value):
@@ -53,7 +53,14 @@ var health:float:
 		health = value
 		health_changed.emit()
 
-@export_storage var health_addition:Dictionary[StringName, float] = {}
+@export_group("Health Addition")
+
+@export var perfect_health_addition:float = 3
+@export var great_health_addition:float = 2
+@export var good_health_addition:float = 1
+@export var okay_health_addition:float = -1
+@export var bad_health_addition:float = -2
+@export var miss_health_addition:float = -8
 
 signal health_changed
 signal health_depleted
@@ -63,7 +70,7 @@ signal note_controller_connected(connected: bool)
 func _get_configuration_warnings() -> PackedStringArray:
 	var warnings:PackedStringArray
 	if !is_tree_root and note_controller == null:
-		warnings.append(tr("This health bar requires a note controller to function. Make sure to assign one on the inspector"))
+		warnings.append(tr("This health module requires a note controller to function. Make sure to assign one on the inspector"))
 	
 	return warnings
 
@@ -81,79 +88,22 @@ func note_changed(result:RubiconLevelNoteHitResult, has_ending_row:bool = false)
 			health_addition *= 0.5
 
 		if health_addition > 0.0:
-			health_addition *= health_gain_mutli
+			health_addition *= health_gain_mutliplier
 		else:
-			health_addition *= health_lose_mutli
+			health_addition *= health_lose_mutliplier
 		
 		health += health_addition
 
-@export_storage var perfect_health_addition:float = 3
-@export_storage var great_health_addition:float = 2
-@export_storage var good_health_addition:float = 1
-@export_storage var okay_health_addition:float = -1
-@export_storage var bad_health_addition:float = -2
-@export_storage var miss_health_addition:float = -8
-func _get_property_list() -> Array[Dictionary]:
-	var properties:Array[Dictionary]
+func _validate_property(property: Dictionary) -> void:
+	if property.name == &"starting_health":
+		property.hint = PROPERTY_HINT_RANGE
+		property.hint_string = "%s,%s,0.01" % [min_health, max_health]
 	
-	properties.append({
-		name = &"starting_health",
-		type = TYPE_FLOAT,
-		usage = PROPERTY_USAGE_DEFAULT,
-		hint = PROPERTY_HINT_NONE,
-	})
-	
-	# Should be changed whenever disabling and enabling
-	# judgments is properly set up.
-	# It will take the enabled judgments and add a
-	# property for ONLY the enabled ones.
-	if note_controller != null:
-		properties.append({
-			name = &"Health Addition",
-			type = TYPE_NIL,
-			usage = PROPERTY_USAGE_GROUP,
-		})
-		
-		properties.append({
-			name = &"perfect_health_addition",
-			type = TYPE_FLOAT,
-			usage = PROPERTY_USAGE_DEFAULT,
-		})
-		
-		properties.append({
-			name = &"great_health_addition",
-			type = TYPE_FLOAT,
-			usage = PROPERTY_USAGE_DEFAULT,
-		})
-		
-		properties.append({
-			name = &"good_health_addition",
-			type = TYPE_FLOAT,
-			usage = PROPERTY_USAGE_DEFAULT,
-		})
-		
-		properties.append({
-			name = &"okay_health_addition",
-			type = TYPE_FLOAT,
-			usage = PROPERTY_USAGE_DEFAULT,
-		})
-		
-		properties.append({
-			name = &"bad_health_addition",
-			type = TYPE_FLOAT,
-			usage = PROPERTY_USAGE_DEFAULT,
-		})
-		
-		properties.append({
-			name = &"miss_health_addition",
-			type = TYPE_FLOAT,
-			usage = PROPERTY_USAGE_DEFAULT,
-		})
-	
-	return properties
+	if property.name.ends_with("_health_addition"):
+			property.usage = PROPERTY_USAGE_DEFAULT if note_controller != null else PROPERTY_USAGE_STORAGE
 
 func _property_can_revert(property: StringName) -> bool:
-	if property == &"starting_health":
+	if property == &"starting_health" and starting_health != (min_health + max_health) / 2:
 		return true
 	return false
 
@@ -163,18 +113,6 @@ func _property_get_revert(property: StringName) -> Variant:
 			return (min_health + max_health) / 2
 	
 	return null
-
-func _get(property: StringName) -> Variant:
-	if property.ends_with("_health_addition"):
-		if !health_addition.has(property):
-			health_addition.set(property, _property_get_revert(property))
-	return null
-
-func _set(property: StringName, value: Variant) -> bool:
-	if property.ends_with("_health_addition"):
-		health_addition.set(property, value)
-		return true
-	return false
 
 var _pre_save_health: float = 0.0
 func _notification(what: int) -> void:
