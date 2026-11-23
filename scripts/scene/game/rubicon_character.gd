@@ -196,7 +196,6 @@ var state: CharacterState = CharacterState.STATE_DANCING
 ## The index of this character connected to its note controller.
 var note_controller_index: int = -1
 
-@export_storage var anim_mode_ids: Dictionary[StringName, StringName] = {}
 @export_storage var anim_groups: Dictionary[StringName, StringName] = {}
 
 var _last_result:RubiconLevelNoteHitResult
@@ -508,10 +507,8 @@ func _get_property_list() -> Array[Dictionary]:
 	if animation_player != null:
 		if !animation_data.is_empty():
 			anim_groups.clear()
-			anim_mode_ids.clear()
 			for mode: StringName in animation_data.keys():
 				var mode_id: String = animation_data[mode].id
-				anim_mode_ids[mode_id] = mode
 				properties.append({
 					name = mode.capitalize(),
 					type = TYPE_NIL,
