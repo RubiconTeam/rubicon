@@ -1,5 +1,7 @@
 @tool
-class_name RubiChartRow extends Resource
+## Row of notes in a measure used by [RubiChart].
+class_name RubiChartRow
+extends Resource
 
 @export var offset : int
 @export var quant : RubiChart.Quant

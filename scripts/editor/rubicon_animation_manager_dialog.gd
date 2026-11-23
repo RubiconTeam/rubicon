@@ -1,6 +1,8 @@
 @tool
-extends AcceptDialog
+## Animation Manager dialog for [RubiconCharacter]s.
+## It's used to set up animations for different game modes and groups within them.
 class_name RubiconAnimationManager
+extends AcceptDialog
 
 @export var tree: Tree
 
@@ -20,4 +22,5 @@ func reload_character_data() -> void:
 		mode_item.set_text(0, mode)
 		mode_item.set_editable(0, true)
 		mode_item.set_text(1, character.animation_data[mode].id)
+		mode_item.set_editable(1, true)
 		print(mode)

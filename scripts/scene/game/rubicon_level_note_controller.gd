@@ -1,5 +1,7 @@
 @tool
-class_name RubiconLevelNoteController extends Control
+## Note Controllers provide a chart, recieve and pass inputs to note handlers and hold performance values.
+class_name RubiconLevelNoteController
+extends Control
 
 @export var chart : RubiChart:
 	get:

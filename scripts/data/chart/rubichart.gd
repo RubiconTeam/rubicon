@@ -1,5 +1,7 @@
 @tool
-class_name RubiChart extends Resource
+## Chart format used by [RubiconLevelNoteController].
+class_name RubiChart
+extends Resource
 
 const VERSION_MAJOR : int = 2
 const VERSION_MINOR : int = 0
@@ -19,7 +21,7 @@ enum Quant
 	RUBICHART_QUANT_128 = 128
 }
 
-static var quants : Array[Quant] = [
+static var quants: Array[Quant] = [
 	RubiChart.Quant.RUBICHART_QUANT_4,
 	RubiChart.Quant.RUBICHART_QUANT_8,
 	RubiChart.Quant.RUBICHART_QUANT_12,
@@ -31,38 +33,38 @@ static var quants : Array[Quant] = [
 	RubiChart.Quant.RUBICHART_QUANT_128
 ]
 
-@export var scroll_multiplier : float = 1.0
-@export var sections : Array[RubiChartSection]
-@export var scroll_velocities : Array[RubiChartScrollVelocity] = [RubiChartScrollVelocity.new()]
+@export var scroll_multiplier: float = 1.0
+@export var sections: Array[RubiChartSection]
+@export var scroll_velocities: Array[RubiChartScrollVelocity] = [RubiChartScrollVelocity.new()]
 
-func initialize(time_changes : Array[RubiconTimeChange]) -> void:
+func initialize(time_changes: Array[RubiconTimeChange]) -> void:
 	RubiconTimeChange.update(time_changes)
 
-	for section in sections:
+	for section: RubiChartSection in sections:
 		section.chart = self
 		
-		for row in section.rows:
+		for row: RubiChartRow in section.rows:
 			row.section = section
 			row.initaliize(time_changes)
 			
-			for start in row.starts:
+			for start: RubiChartNote in row.starts:
 				start.starting_row = row
 			
-			for end in row.ends:
+			for end: RubiChartNote in row.ends:
 				end.ending_row = row
 	
 	scroll_velocities[0].initialize(time_changes)
 	for s in range(1, scroll_velocities.size()):
-		var current : RubiChartScrollVelocity = scroll_velocities[s]
-		var previous : RubiChartScrollVelocity = scroll_velocities[s - 1]
+		var current: RubiChartScrollVelocity = scroll_velocities[s]
+		var previous: RubiChartScrollVelocity = scroll_velocities[s - 1]
 		
 		current.initialize_with_previous(time_changes, previous)
 
 func get_notes_of_id(id : String, include_ends : bool = false) -> Array[RubiChartNote]:
-	var notes : Array[RubiChartNote]
-	for section in sections:
-		for row in section.rows:
-			var note : RubiChartNote = row.get_note_with_id(id, include_ends)
+	var notes: Array[RubiChartNote]
+	for section: RubiChartSection in sections:
+		for row: RubiChartRow in section.rows:
+			var note: RubiChartNote = row.get_note_with_id(id, include_ends)
 			if note != null:
 				notes.append(note)
 	

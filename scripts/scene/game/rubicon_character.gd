@@ -1,7 +1,10 @@
 @tool
-class_name RubiconCharacter extends Node
+## Character class that plays determined animations from an [AnimationPlayer] based on note results and song time.[br][br]
+## Characters require a [RubiconLevelNoteController] and are purely independent, as all of their logic is found in this class.
+class_name RubiconCharacter
+extends Node
 
-## The main [member AnimationPlayer], used to play singing and dancing animations. It is needed for characters to work.
+## The main [AnimationPlayer], used to play singing and dancing animations. It is needed for characters to work.
 @export var animation_player:AnimationPlayer:
 	set(value):
 		if value == animation_player:
@@ -22,9 +25,9 @@ class_name RubiconCharacter extends Node
 		notify_property_list_changed()
 		update_configuration_warnings()
 
-## The [member RubiconLevelNoteController] that the character attaches to.[br]
+## The [RubiconLevelNoteController] that the character attaches to.[br]
 ## It is needed for characters to sing and dance, since it makes use of this controller's clock and signals to display animations.[br][br]
-## This property will not show if this [member RubiconCharacter] is the root of the scene.
+## This property will not show if this [RubiconCharacter] is the root of the scene.
 @export var level_note_controller : RubiconLevelNoteController:
 	set(value):
 		if value == level_note_controller:
@@ -255,12 +258,16 @@ enum HoldOverrideBehavior {
 ## Emitted when a note controller is either connected or not connected.
 signal note_controller_connected(value: bool)
 
+## Checks if [member level_note_controller] is a valid instance.
 func _valid_controller() -> bool:
 	return level_note_controller != null and level_note_controller.get_level_clock() != null
 
+## Checks for [method _valid_controller] and if [member animation_player] is valid.
 func _valid_references() -> bool:
 	return _valid_controller() and animation_player != null
 
+## Function connected to [member level_note_controller]'s [signal RubiconLevelNoteController.note_changed] signal.[br][br]
+## Handles singing and holding states, and what animations need to be played based on the result.
 func note_changed(result:RubiconLevelNoteHitResult, has_ending_row:bool = false) -> void:
 	if not singing_should_sing or state == CharacterState.STATE_OVERRIDE or !_valid_controller():
 		return
@@ -334,6 +341,7 @@ func _process(delta: float) -> void:
 		state = CharacterState.STATE_RESTING
 		_dance()
 
+## Function connected to the [member level_note_controller]'s clock and handles both dancing and [enum STEP_REPEAT] hold type.
 func step_change(step: int) -> void:
 	if !_valid_references():
 		return
@@ -363,6 +371,7 @@ func _handler_pressed(id: StringName) -> void:
 func _handler_released(id: StringName) -> void:
 	_handlers_pressed[id] = false
 
+## Plays the next dance animation in the sequence if [member dancing_should_dance] is enabled.
 func _dance() -> void:
 	if dancing_animations.is_empty():
 		return
@@ -373,6 +382,8 @@ func _dance() -> void:
 
 	_dance_anim_index = wrapi(_dance_anim_index + 1, 0, _dance_anim_size)
 
+## Plays an animation if [member animation_player] is valid and the animation exists in it.[br][br]
+## If [member transition_retain_animation_queue] is enabled, this function will keep the animation queue after playing it.
 func play(anim_name:StringName, warn_missing_animation:bool = false) -> void:
 	if animation_player == null:
 		printerr("Animation Player is null in character " + scene_file_path.get_file())
@@ -395,8 +406,11 @@ func play(anim_name:StringName, warn_missing_animation:bool = false) -> void:
 		for queued_animation in same_animation_queue:
 			animation_player.queue(queued_animation)
 
+## Returns the final animation name for the [member animation_player] to play based on [param result].
 func get_anim_from_result(result:RubiconLevelNoteHitResult) -> StringName:
 	var note_id: StringName = result.handler.get_unique_id()
+	# TODO: Find a better way of knowing the animation suffix.
+	# May require some rework on the animation data.
 	var anim_suffix: StringName = &"sing" if result.scoring_rating != RubiconLevelNoteHitResult.Judgment.JUDGMENT_MISS else &"miss"
 	
 	var animation_name: StringName = &"%s_%s" % [note_id, anim_suffix]
@@ -552,6 +566,7 @@ func _get_property_list() -> Array[Dictionary]:
 
 	return properties
 
+## Opens the Animation Manager window and assigns itself to it.
 func open_animation_manager() -> void:
 	if !Engine.is_editor_hint() or RubiconPlugin.instance == null:
 		return

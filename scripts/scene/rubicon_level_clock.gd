@@ -1,5 +1,9 @@
 @tool
-class_name RubiconLevelClock extends Node
+## Level Clocks calculate different time values like measures, beats and steps based on its child
+## [member animation_player]'s time. Often read by other nodes like characters or time dependant logic.[br][br]
+## Clocks need a parent of type [RubiconLevel] and an [AnimationPlayer] child to function.
+class_name RubiconLevelClock
+extends Node
 
 @export var offset : float = 0.0
 

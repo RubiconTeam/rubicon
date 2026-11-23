@@ -1,5 +1,8 @@
 @tool
-class_name RubiconLevel extends Node
+## The main node for levels. Should always have a [RubiconLevelClock] child and [member metadata] assigned.[br][br]
+## Many nodes will reference this node to access the clock and it is required for a clock to work.
+class_name RubiconLevel
+extends Node
 
 @export var metadata : RubiconLevelMetadata:
 	get:

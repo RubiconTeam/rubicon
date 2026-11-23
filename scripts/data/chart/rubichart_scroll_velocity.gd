@@ -1,5 +1,7 @@
 @tool
-class_name RubiChartScrollVelocity extends Resource
+## Class for scroll velocity changes in [RubiChart].
+class_name RubiChartScrollVelocity
+extends Resource
 
 @export var measure_time : float
 @export_range(0, 100, 0.001, "or_greater") var multiplier : float = 1

@@ -1,5 +1,7 @@
 @tool
-@abstract class_name RubiconLevelNoteHandler extends Control
+## Abstract note handler that spawns, despawns, and triggers note hits.
+@abstract class_name RubiconLevelNoteHandler
+extends Control
 
 @export var settings : RubiconLevelNoteSettings
 

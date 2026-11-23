@@ -1,5 +1,8 @@
 @tool
-@abstract class_name RubiconLevelNote extends Control
+## Abstract note class for levels.[br][br]
+## Different from [RubiChartNote], this being the note being loaded ingame with the data assigned from the chart.
+@abstract class_name RubiconLevelNote
+extends Control
 
 var data_index : int = 0
 var missed : bool = false

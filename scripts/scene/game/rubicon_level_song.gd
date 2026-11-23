@@ -1,6 +1,7 @@
 @tool
-extends Node
+## Class that synchronizes [AudioStreamPlayer]s to a level's clock on the given sync intervals.
 class_name RubiconLevelSong
+extends Node
 
 enum SyncTime {
 	STEP,

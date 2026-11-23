@@ -1,7 +1,9 @@
 @tool
-class_name RubiChartSection extends Resource
+## Section of note rows in a measure, used by [RubiChart].
+class_name RubiChartSection
+extends Resource
 
-@export var measure : int
-@export var rows : Array[RubiChartRow]
+@export var measure: int
+@export var rows: Array[RubiChartRow]
 
-var chart : RubiChart
+var chart: RubiChart
