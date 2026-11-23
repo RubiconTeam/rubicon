@@ -7,9 +7,6 @@ class_name RubiconHealthModule
 		if value == note_controller:
 			return
 		
-		if is_tree_root and note_controller == null:
-			printerr("Not recommended to assign a Note Controller on a character's scene (unless you know what you're doing!)")
-		
 		if value != note_controller and note_controller != null and note_controller.note_changed.is_connected(note_changed):
 			note_controller.disconnect("note_changed", note_changed)
 			note_controller_connected.emit(false)
@@ -22,14 +19,6 @@ class_name RubiconHealthModule
 			note_controller.connect("note_changed", note_changed)
 			note_controller_connected.emit(true)
 
-var is_tree_root:bool:
-	get():
-		if !is_inside_tree():
-			return false
-		
-		if get_tree() != null and self == get_tree().edited_scene_root:
-			return true
-		return false
 
 @export var min_health:float = 0.0
 @export var max_health:float = 100.0
@@ -69,7 +58,7 @@ signal note_controller_connected(connected: bool)
 
 func _get_configuration_warnings() -> PackedStringArray:
 	var warnings:PackedStringArray
-	if !is_tree_root and note_controller == null:
+	if note_controller == null:
 		warnings.append(tr("This health module requires a note controller to function. Make sure to assign one on the inspector"))
 	
 	return warnings
