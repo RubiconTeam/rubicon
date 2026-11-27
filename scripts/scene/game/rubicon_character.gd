@@ -584,11 +584,11 @@ func refresh_animation_groups() -> void:
 
 ## Opens the Animation Manager window and assigns itself to it.
 func open_animation_manager() -> void:
-	if !Engine.is_editor_hint() or RubiconPlugin.instance == null:
+	if !Engine.is_editor_hint():
 		return
 	
-	RubiconPlugin.instance.animation_manager_instance.character = self
-	RubiconPlugin.instance.animation_manager_instance.show()
+	#RubiconPlugin.instance.animation_manager_instance.character = self
+	#RubiconPlugin.instance.animation_manager_instance.show()
 
 func _get(property: StringName) -> Variant:
 	if anim_groups.has(property):

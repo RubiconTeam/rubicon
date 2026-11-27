@@ -1,6 +1,5 @@
 @tool
 extends EditorPlugin
-class_name RubiconPlugin
 
 var _create_context_menu_plugin: GDScript
 var _context_menu_plugin_instance:EditorContextMenuPlugin
@@ -15,8 +14,9 @@ var playtesting_level:bool = false:
 		RubiconLevelNoteController.is_playtesting = value
 var playtest_checkbox:CheckBox
 
-## EDITOR-ONLY instance of the plugin.
-static var instance: RubiconPlugin
+# EDITOR-ONLY instance of the plugin.
+# commented out because adding a class name to a plugin brings export issues (i forgot)
+#static var instance: RubiconPlugin
 
 func _enter_tree() -> void:
 	add_project_setting("rubicon/defaults/note_database", TYPE_STRING, PROPERTY_HINT_FILE, "*.tres,*.res", "res://note_database.tres")
@@ -27,10 +27,10 @@ func _enter_tree() -> void:
 		ResourceSaver.save(RubiconLevelNoteDatabase.new(), note_database_path)
 	
 	if Engine.is_editor_hint():
-		if instance != null:
-			queue_free()
-			return
-		instance = self
+		#if instance != null:
+			#queue_free()
+			#return
+		#instance = self
 		
 		_create_context_menu_plugin = load("res://addons/rubicon/scripts/create_context_menu_plugin.gd")
 		_context_menu_plugin_instance = _create_context_menu_plugin.new()
@@ -52,8 +52,8 @@ func _exit_tree() -> void:
 	if !Engine.is_editor_hint():
 		return
 	
-	if instance == self:
-		instance = null
+	#if instance == self:
+		#instance = null
 	
 	playtest_checkbox.queue_free()
 	remove_context_menu_plugin(_context_menu_plugin_instance)
