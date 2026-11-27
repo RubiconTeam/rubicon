@@ -1,1 +1,4 @@
 *.directory
+
+# ignore imports as the placeholder sprites dont matter that much and it adds changes to your submodule
+*.import
