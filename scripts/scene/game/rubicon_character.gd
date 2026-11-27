@@ -177,7 +177,11 @@ extends Node
 			},
 		}
 	}
-}
+}:
+	set(value):
+		animation_data = value
+		refresh_animation_groups()
+		notify_property_list_changed()
 
 ## Default note directions in 4K Mania used to predict animation names
 const default_mania_directions: Array[StringName] = [&"left", &"down", &"up", &"right"]
@@ -199,7 +203,7 @@ var state: CharacterState = CharacterState.STATE_DANCING
 ## The index of this character connected to its note controller.
 var note_controller_index: int = -1
 
-@export_storage var anim_groups: Dictionary[StringName, StringName] = {}
+var anim_groups: Dictionary[StringName, StringName] = {}
 
 var _last_result:RubiconLevelNoteHitResult
 var _last_sing_anim: StringName
@@ -520,7 +524,6 @@ func _get_property_list() -> Array[Dictionary]:
 	
 	if animation_player != null:
 		if !animation_data.is_empty():
-			anim_groups.clear()
 			for mode: StringName in animation_data.keys():
 				var mode_id: String = animation_data[mode].id
 				properties.append({
@@ -545,7 +548,6 @@ func _get_property_list() -> Array[Dictionary]:
 						for lane: int in lane_amount:
 							var anim_id: StringName = &"%s%s_%s" % [mode_id, lane, group]
 							var final_anim_name: StringName = groups[group][anim_id] if groups[group].has(anim_id) else anim_id
-							anim_groups[final_anim_name] = anim_id
 
 							if !animations.has(anim_id):
 								animations[anim_id] = &""
@@ -565,6 +567,20 @@ func _get_property_list() -> Array[Dictionary]:
 							})
 
 	return properties
+
+func refresh_animation_groups() -> void:
+	for mode: StringName in animation_data.keys():
+		var anim_data: Dictionary = animation_data[mode]
+		if !anim_data.has("groups") or !anim_data.has("lane_amount"):
+			continue
+		
+		var groups: Dictionary = anim_data.groups
+		var mode_id: String = animation_data[mode].id
+		for group: String in groups.keys():
+			for lane: int in anim_data.lane_amount:
+				var anim_id: StringName = &"%s%s_%s" % [mode_id, lane, group]
+				var final_anim_name: StringName = groups[group][anim_id] if groups[group].has(anim_id) else anim_id
+				anim_groups[final_anim_name] = anim_id
 
 ## Opens the Animation Manager window and assigns itself to it.
 func open_animation_manager() -> void:
@@ -632,4 +648,10 @@ func _property_get_revert(property: StringName) -> Variant:
 		return anim
 	
 	return null
+
+func _notification(what: int) -> void:
+	match what:
+		NOTIFICATION_READY:
+			refresh_animation_groups()
+
 #endregion
